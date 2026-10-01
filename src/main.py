@@ -16,7 +16,7 @@ from src.ai.llama_client import LlamaUnavailableError, interpret
 from src.analysis.cost_analyzer import analyze_costs, compare_periods
 from src.analysis.finops_rules import generate_alerts
 from src.aws.cost_explorer import CostExplorerError, get_costs
-from src.reports.report_generator import build_report, save_report
+from src.reports.report_generator import build_report_for_format, save_report
 
 
 def run():
@@ -55,7 +55,8 @@ def run():
         ai_error = "Camada de IA desativada por configuração (AI_ENABLED=false)."
 
     # 5. Relatório ---------------------------------------------------------
-    report = build_report(
+    report, report_format = build_report_for_format(
+        config.REPORT_FORMAT,
         costs=costs,
         analysis=analysis,
         comparison=comparison,
@@ -65,7 +66,7 @@ def run():
     )
     print(report)
 
-    path = save_report(report)
+    path = save_report(report, report_format=report_format)
     print(f"\nRelatório salvo em: {path}")
     return 0
 

@@ -82,11 +82,17 @@ Formato de cada caso: Problema → Onde é detectado → Como é tratado → Imp
 - **Como:** relatório mostra "Nenhum serviço apresentou custo positivo no período."
 - **Impacto:** não lista serviços nem maior serviço; fluxo normal.
 
-## Configuração inteira inválida
+## Configuração numérica inválida
 
-- **Onde:** `config._get_int`, ao ler `COST_PERIOD_DAYS` / `LLAMA_TIMEOUT`.
-- **Como:** levanta `ValueError(f"A variável de ambiente {name}='{value}' não é um inteiro válido.")`.
+- **Onde:** `config._get_int` (`COST_PERIOD_DAYS`, `LLAMA_TIMEOUT`, `FINOPS_TOP_N`) e `config._get_float` (`FINOPS_GROWTH_THRESHOLD`, `FINOPS_CONCENTRATION_THRESHOLD`).
+- **Como:** levanta `ValueError` indicando a variável e o valor inválido ("não é um inteiro válido" / "não é um número válido").
 - **Impacto:** ocorre na importação de `src.config`; interrompe a execução antes do fluxo. Não é capturado em `main`.
+
+## Formato de relatório desconhecido
+
+- **Onde:** `report_generator.build_report_for_format` e `save_report`.
+- **Como:** não é erro. Um `REPORT_FORMAT` fora de `{txt, json, markdown}` cai silenciosamente em `txt` (builder e extensão).
+- **Impacto:** o relatório é gerado em texto; o fluxo segue normal.
 
 ## Geração de relatório
 
