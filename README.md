@@ -30,23 +30,33 @@ Essa separação é intencional: ela mantém a parte crítica (os números) audi
 
 ## Arquitetura
 
-```
-AWS Cost Explorer
-        ↓
-Python / boto3           (coleta de dados)      → src/aws/cost_explorer.py
-        ↓
-Cost Analyzer            (cálculo determinístico) → src/analysis/cost_analyzer.py
-        ↓
-Dados estruturados
-        ↓
-Llama                    (interpretação)         → src/ai/llama_client.py
-        ↓
-Interpretação
-        ↓
-Relatório                (geração)               → src/reports/report_generator.py
+```mermaid
+flowchart LR
+    AWS[("AWS Cost Explorer<br/>boto3 / STS / IAM")]
+    CE["cost_explorer.py<br/><i>coleta</i>"]
+    AN["cost_analyzer.py<br/><i>cálculo determinístico</i>"]
+    FR["finops_rules.py<br/><i>regras de FinOps</i>"]
+    AI["llama_client.py<br/><i>IA — opcional / não-bloqueante</i>"]
+    RG["report_generator.py<br/><i>relatório txt / json / md</i>"]
+    OUT[("reports/")]
+
+    AWS --> CE --> AN --> FR
+    FR --> RG
+    FR -.-> AI
+    AI -.-> RG
+    RG --> OUT
+
+    classDef calc fill:#0d3b4f,stroke:#22d3ee,color:#e2f6fb;
+    classDef ai fill:#2a1e4f,stroke:#a78bfa,color:#ece7fb,stroke-dasharray:4 3;
+    classDef out fill:#0d3b2f,stroke:#34d399,color:#dcfbe9;
+    class CE,AN,FR calc;
+    class AI ai;
+    class RG,OUT out;
 ```
 
-A orquestração do fluxo fica em `src/main.py`, e os parâmetros (região, janela de dias, endpoint do Llama) são centralizados em `src/config.py`.
+> **Python calcula** (nós em azul: coleta, cálculo e regras de FinOps). **IA interpreta** (nó roxo tracejado: opcional e não-bloqueante — se o Llama estiver fora do ar, o relatório sai mesmo assim).
+
+A orquestração do fluxo fica em `src/main.py`, e os parâmetros (região, janela de dias, endpoint do Llama, formato do relatório) são centralizados em `src/config.py`.
 
 ---
 
