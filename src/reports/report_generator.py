@@ -32,7 +32,14 @@ def _money(value):
     return f"{rounded:.2f}"
 
 
-def build_report(costs, analysis, comparison, ai_interpretation=None, ai_error=None):
+def build_report(
+    costs,
+    analysis,
+    comparison,
+    ai_interpretation=None,
+    ai_error=None,
+    alerts=None,
+):
     """Monta o texto do relatório a partir dos dados calculados.
 
     Parâmetros
@@ -47,6 +54,8 @@ def build_report(costs, analysis, comparison, ai_interpretation=None, ai_error=N
         Texto da IA, se disponível.
     ai_error : str | None
         Mensagem explicando por que a IA não está disponível, se for o caso.
+    alerts : list[dict] | None
+        Alertas determinísticos de ``finops_rules.generate_alerts``.
 
     Retorno
     -------
@@ -96,6 +105,15 @@ def build_report(costs, analysis, comparison, ai_interpretation=None, ai_error=N
             linhas.append(
                 "  Variação: indisponível (período anterior com custo zero)."
             )
+    linhas.append("")
+
+    linhas.append("-" * 60)
+    linhas.append("Alertas de FinOps:")
+    if alerts:
+        for alert in alerts:
+            linhas.append(f"  - [{alert['severity'].upper()}] {alert['message']}")
+    else:
+        linhas.append("  Nenhum alerta gerado.")
     linhas.append("")
 
     linhas.append("-" * 60)

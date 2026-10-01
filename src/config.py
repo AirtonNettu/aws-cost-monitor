@@ -29,6 +29,19 @@ def _get_int(name, default):
         )
 
 
+def _get_float(name, default):
+    """Lê uma variável de ambiente como float, com fallback para o default."""
+    value = os.getenv(name)
+    if value is None or value.strip() == "":
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        raise ValueError(
+            f"A variável de ambiente {name}='{value}' não é um número válido."
+        )
+
+
 # --- AWS / Cost Explorer -------------------------------------------------
 # O Cost Explorer é um serviço global, mas o endpoint boto3 usa us-east-1.
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
@@ -50,6 +63,18 @@ LLAMA_TIMEOUT = _get_int("LLAMA_TIMEOUT", 60)
 
 # Permite desligar a camada de IA explicitamente (relatório sai sem interpretação).
 AI_ENABLED = os.getenv("AI_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
+
+
+# --- Regras de FinOps ----------------------------------------------------
+# Limiares determinísticos usados em src/analysis/finops_rules.py.
+# Crescimento (%) do custo total entre períodos acima do qual gera alerta.
+FINOPS_GROWTH_THRESHOLD = _get_float("FINOPS_GROWTH_THRESHOLD", 20.0)
+
+# Participação (%) de um único serviço no total acima da qual gera alerta.
+FINOPS_CONCENTRATION_THRESHOLD = _get_float("FINOPS_CONCENTRATION_THRESHOLD", 50.0)
+
+# Quantidade de serviços no ranking "top N por custo".
+FINOPS_TOP_N = _get_int("FINOPS_TOP_N", 5)
 
 
 # --- Relatórios ----------------------------------------------------------
