@@ -1,10 +1,20 @@
 [project]
 name = "aws-cost-monitor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Ferramenta de monitoramento e análise de custos da AWS (FinOps) em Python, com camada de interpretação por IA desacoplada."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.43.104",
     "python-dotenv>=1.2.3",
+    "requests>=2.32.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
