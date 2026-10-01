@@ -22,11 +22,13 @@ class LlamaUnavailableError(Exception):
     """O servidor Llama não está acessível ou falhou ao responder."""
 
 
-def _build_prompt(analysis, comparison):
+def _build_prompt(analysis, comparison, alerts=None):
     """Monta o prompt de interpretação a partir dos dados já calculados.
 
     Os valores financeiros são injetados prontos. O modelo é instruído a
-    interpretar, não a recalcular nem inventar números.
+    interpretar, não a recalcular nem inventar números. Os alertas de FinOps,
+    quando presentes, também são determinísticos e apenas apresentados ao
+    modelo para interpretação.
     """
     linhas = []
     linhas.append(
@@ -63,6 +65,12 @@ def _build_prompt(analysis, comparison):
                 "Variação percentual indisponível (período anterior com custo zero)."
             )
 
+    if alerts:
+        linhas.append("")
+        linhas.append("Alertas determinísticos já identificados pelo sistema:")
+        for alert in alerts:
+            linhas.append(f"- {alert['message']}")
+
     linhas.append("")
     linhas.append(
         "Com base apenas nesses dados, aponte: os maiores custos, mudanças "
@@ -72,7 +80,7 @@ def _build_prompt(analysis, comparison):
     return "\n".join(linhas)
 
 
-def interpret(analysis, comparison):
+def interpret(analysis, comparison, alerts=None):
     """Pede ao Llama uma interpretação dos dados de custo.
 
     Parâmetros
@@ -81,6 +89,8 @@ def interpret(analysis, comparison):
         Saída de ``cost_analyzer.analyze_costs``.
     comparison : dict | None
         Saída de ``cost_analyzer.compare_periods``.
+    alerts : list[dict] | None
+        Alertas determinísticos de ``finops_rules.generate_alerts``.
 
     Retorno
     -------
@@ -93,7 +103,7 @@ def interpret(analysis, comparison):
         Quando o servidor Llama está indisponível ou retorna erro. O chamador
         decide como seguir (ex.: gerar o relatório sem a interpretação).
     """
-    prompt = _build_prompt(analysis, comparison)
+    prompt = _build_prompt(analysis, comparison, alerts)
     url = f"{config.LLAMA_BASE_URL.rstrip('/')}/api/generate"
 
     try:
