@@ -79,3 +79,7 @@ FINOPS_TOP_N = _get_int("FINOPS_TOP_N", 5)
 
 # --- Relatórios ----------------------------------------------------------
 REPORTS_DIR = os.getenv("REPORTS_DIR", "reports")
+
+# Formato do relatório gerado: "txt" (default), "json" ou "markdown".
+# Valor é normalizado (sem espaços, minúsculo) em src/reports/report_generator.py.
+REPORT_FORMAT = os.getenv("REPORT_FORMAT", "txt")
