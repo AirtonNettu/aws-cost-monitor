@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <!-- Fundo -->
+  <rect width="1200" height="680" fill="#0b1220"/>
+  <rect x="24" y="24" width="1152" height="632" rx="16" fill="#0f1830" stroke="#1e2a4a" stroke-width="1.5"/>
+
+  <!-- Barra de janela -->
+  <circle cx="60" cy="60" r="7" fill="#f87171"/>
+  <circle cx="84" cy="60" r="7" fill="#fbbf24"/>
+  <circle cx="108" cy="60" r="7" fill="#34d399"/>
+  <text x="1152" y="65" text-anchor="end" fill="#5b6b8c" font-size="15" font-family="monospace">aws-cost-monitor — arquitetura</text>
+
+  <!-- Titulo -->
+  <rect x="56" y="104" width="6" height="30" rx="3" fill="#38bdf8"/>
+  <text x="76" y="127" fill="#e8eefc" font-size="26" font-weight="700">Arquitetura do Pipeline FinOps</text>
+  <text x="76" y="156" fill="#8aa0c6" font-size="15" font-style="italic">Python calcula. IA interpreta.</text>
+
+  <!-- Legenda -->
+  <g font-size="13">
+    <rect x="820" y="112" width="16" height="16" rx="3" fill="#0d3b4f" stroke="#22d3ee"/>
+    <text x="844" y="125" fill="#9fb3d6">Python (cálculo)</text>
+    <rect x="820" y="136" width="16" height="16" rx="3" fill="#2a1e4f" stroke="#a78bfa" stroke-dasharray="4 3"/>
+    <text x="844" y="149" fill="#9fb3d6">IA (opcional)</text>
+    <rect x="1000" y="112" width="16" height="16" rx="3" fill="#0d3b2f" stroke="#34d399"/>
+    <text x="1024" y="125" fill="#9fb3d6">Saída</text>
+    <rect x="1000" y="136" width="16" height="16" rx="3" fill="#2a2338" stroke="#f0a73b"/>
+    <text x="1024" y="149" fill="#9fb3d6">Fonte AWS</text>
+  </g>
+
+  <!-- Conexoes (desenhadas antes das caixas) -->
+  <g stroke-width="2.5" fill="none">
+    <!-- AWS -> cost_explorer -->
+    <path d="M300 360 H360" stroke="#22d3ee"/>
+    <!-- cost_explorer -> cost_analyzer -->
+    <path d="M560 360 H620" stroke="#22d3ee"/>
+    <!-- cost_analyzer -> finops_rules -->
+    <path d="M820 360 H880" stroke="#22d3ee"/>
+    <!-- finops_rules -> report (desce) -->
+    <path d="M980 404 V478" stroke="#34d399"/>
+    <!-- finops_rules -> IA (sobe, tracejado) -->
+    <path d="M980 316 V210 H760 V228" stroke="#a78bfa" stroke-dasharray="6 4"/>
+    <!-- IA -> report (tracejado) -->
+    <path d="M760 300 V440 H900 V478" stroke="#a78bfa" stroke-dasharray="6 4"/>
+  </g>
+
+  <!-- Setas -->
+  <g fill="none" stroke-width="2.5">
+    <path d="M352 354 L362 360 L352 366" stroke="#22d3ee"/>
+    <path d="M612 354 L622 360 L612 366" stroke="#22d3ee"/>
+    <path d="M872 354 L882 360 L872 366" stroke="#22d3ee"/>
+    <path d="M974 470 L980 480 L986 470" stroke="#34d399"/>
+  </g>
+
+  <!-- AWS Cost Explorer (fonte) -->
+  <g>
+    <rect x="80" y="316" width="220" height="88" rx="12" fill="#2a2338" stroke="#f0a73b" stroke-width="2"/>
+    <text x="190" y="352" text-anchor="middle" fill="#ffe4b5" font-size="18" font-weight="700">AWS Cost Explorer</text>
+    <text x="190" y="377" text-anchor="middle" fill="#c9a56a" font-size="13" font-family="monospace">boto3 · STS · IAM</text>
+  </g>
+
+  <!-- cost_explorer.py -->
+  <g>
+    <rect x="360" y="316" width="200" height="88" rx="12" fill="#0d3b4f" stroke="#22d3ee" stroke-width="2"/>
+    <text x="460" y="352" text-anchor="middle" fill="#e2f6fb" font-size="16" font-weight="700" font-family="monospace">cost_explorer.py</text>
+    <text x="460" y="377" text-anchor="middle" fill="#8fd3e4" font-size="13" font-style="italic">coleta</text>
+  </g>
+
+  <!-- cost_analyzer.py -->
+  <g>
+    <rect x="620" y="316" width="200" height="88" rx="12" fill="#0d3b4f" stroke="#22d3ee" stroke-width="2"/>
+    <text x="720" y="348" text-anchor="middle" fill="#e2f6fb" font-size="16" font-weight="700" font-family="monospace">cost_analyzer.py</text>
+    <text x="720" y="373" text-anchor="middle" fill="#8fd3e4" font-size="13" font-style="italic">cálculo determinístico</text>
+  </g>
+
+  <!-- finops_rules.py -->
+  <g>
+    <rect x="880" y="316" width="200" height="88" rx="12" fill="#0d3b4f" stroke="#22d3ee" stroke-width="2"/>
+    <text x="980" y="348" text-anchor="middle" fill="#e2f6fb" font-size="16" font-weight="700" font-family="monospace">finops_rules.py</text>
+    <text x="980" y="373" text-anchor="middle" fill="#8fd3e4" font-size="13" font-style="italic">regras de FinOps</text>
+  </g>
+
+  <!-- llama_client.py (IA) -->
+  <g>
+    <rect x="620" y="186" width="280" height="84" rx="12" fill="#2a1e4f" stroke="#a78bfa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="760" y="220" text-anchor="middle" fill="#ece7fb" font-size="16" font-weight="700" font-family="monospace">llama_client.py</text>
+    <text x="760" y="244" text-anchor="middle" fill="#c4b5fd" font-size="12" font-style="italic">IA — opcional / não-bloqueante</text>
+  </g>
+
+  <!-- report_generator.py (saida) -->
+  <g>
+    <rect x="800" y="478" width="260" height="88" rx="12" fill="#0d3b2f" stroke="#34d399" stroke-width="2"/>
+    <text x="930" y="514" text-anchor="middle" fill="#dcfbe9" font-size="16" font-weight="700" font-family="monospace">report_generator.py</text>
+    <text x="930" y="539" text-anchor="middle" fill="#86e6b4" font-size="13" font-style="italic">relatório · txt / json / md</text>
+  </g>
+
+  <!-- Rodape -->
+  <text x="76" y="630" fill="#5b6b8c" font-size="13" font-family="monospace">Python 3 · boto3 · requests · pytest · uv     |     github.com/AirtonNettu/aws-cost-monitor</text>
+</svg>
