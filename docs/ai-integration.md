@@ -13,18 +13,20 @@ Isto é visível no código:
 
 ## Como `llama_client.py` funciona
 
-### `interpret(analysis, comparison)`
+### `interpret(analysis, comparison, alerts=None)`
 
-1. Monta o prompt com `_build_prompt(analysis, comparison)`.
+1. Monta o prompt com `_build_prompt(analysis, comparison, alerts)`.
 2. Define a URL: `f"{config.LLAMA_BASE_URL.rstrip('/')}/api/generate"`.
 3. Faz `requests.post(url, json={"model": config.LLAMA_MODEL, "prompt": prompt, "stream": False}, timeout=config.LLAMA_TIMEOUT)`.
 4. Chama `response.raise_for_status()`.
 5. Parseia `response.json()` e extrai `data.get("response")`.
 6. Retorna o texto com `.strip()`.
 
-### `_build_prompt(analysis, comparison)`
+### `_build_prompt(analysis, comparison, alerts=None)`
 
-Monta linhas de texto com: instrução ao modelo (FinOps, não inventar valores, responder em português); custo total; se houver custo positivo, a lista de serviços positivos ordenada desc com valor e percentual, e o maior serviço; caso contrário, a frase de ausência de custo positivo; se `comparison` não for `None`, totais anterior/atual e variação (ou aviso de variação indisponível); e um pedido final de apontar maiores custos, mudanças, pontos de atenção e desperdícios.
+Monta linhas de texto com: instrução ao modelo (FinOps, não inventar valores, responder em português); custo total; se houver custo positivo, a lista de serviços positivos ordenada desc com valor e percentual, e o maior serviço; caso contrário, a frase de ausência de custo positivo; se `comparison` não for `None`, totais anterior/atual e variação (ou aviso de variação indisponível); quando há `alerts`, a lista de alertas determinísticos já identificados; e um pedido final de apontar maiores custos, mudanças, pontos de atenção e desperdícios.
+
+> Os alertas são determinísticos (gerados por `finops_rules`): o prompt apenas os apresenta ao modelo para interpretação, mantendo a regra "Python calcula, IA interpreta".
 
 ## Conexão com o servidor local
 

@@ -68,8 +68,9 @@ A orquestração do fluxo fica em `src/main.py`, e os parâmetros (região, jane
   - Janela de dias configurável (default 30), granularidade `MONTHLY`, métrica `UnblendedCost`, agrupamento por `SERVICE`.
   - Tratamento explícito de credenciais ausentes/incompletas, permissão insuficiente e erros do Cost Explorer (via `CostExplorerError`).
 - **Análise de custos** (`src/analysis/cost_analyzer.py`): agrupamento por serviço, custo total, serviços positivos, percentual por serviço, maior serviço, comparação entre períodos e tratamento seguro de divisão por zero. Todas as funções **retornam dados estruturados**.
-- **Interpretação por IA** (`src/ai/llama_client.py`): envia os dados calculados a um Llama local (API compatível com Ollama) e devolve a interpretação. Trata indisponibilidade via `LlamaUnavailableError`, sem mascarar o erro e sem inventar valores.
-- **Relatório** (`src/reports/report_generator.py`): monta e salva um relatório organizado com período, total, custo e percentual por serviço, maior serviço, comparação e interpretação da IA (quando disponível).
+- **Regras determinísticas de FinOps** (`src/analysis/finops_rules.py`): a partir dos dados já calculados, gera alertas de crescimento de custo entre períodos, concentração de custo em um único serviço e ranking dos maiores serviços. Limiares configuráveis. Determinístico — não usa IA nem rede.
+- **Interpretação por IA** (`src/ai/llama_client.py`): envia os dados calculados (incluindo os alertas de FinOps) a um Llama local (API compatível com Ollama) e devolve a interpretação. Trata indisponibilidade via `LlamaUnavailableError`, sem mascarar o erro e sem inventar valores.
+- **Relatório** (`src/reports/report_generator.py`): monta e salva um relatório com período, total, custo e percentual por serviço, maior serviço, comparação, alertas de FinOps e interpretação da IA. Formato configurável: **texto** (default), **JSON** ou **Markdown**.
 - **Orquestração** (`src/main.py`): executa o fluxo completo com tratamento de erros em cada etapa.
 - **Testes** (`tests/`): suíte com `pytest` e mocks, sem dependência da conta AWS real.
 
@@ -99,15 +100,18 @@ aws-cost-monitor/
 │   ├── aws/
 │   │   └── cost_explorer.py    # coleta de custos no Cost Explorer
 │   ├── analysis/
-│   │   └── cost_analyzer.py    # análise determinística dos custos
+│   │   ├── cost_analyzer.py    # análise determinística dos custos
+│   │   └── finops_rules.py     # regras determinísticas de FinOps (alertas)
 │   ├── ai/
 │   │   └── llama_client.py     # camada de interpretação por IA (Llama)
 │   └── reports/
-│       └── report_generator.py # geração/gravação do relatório
+│       └── report_generator.py # geração/gravação do relatório (txt/json/md)
 ├── tests/                      # testes com pytest + mocks
 │   ├── conftest.py
 │   ├── test_cost_analyzer.py
+│   ├── test_finops_rules.py
 │   ├── test_llama_client.py
+│   ├── test_report_formats.py
 │   └── test_report_generator.py
 ├── data/.gitkeep               # dados (conteúdo não versionado)
 ├── reports/.gitkeep            # relatórios gerados (conteúdo não versionado)
@@ -222,6 +226,10 @@ As credenciais AWS vêm da configuração local do AWS CLI. Os demais parâmetro
 | `LLAMA_BASE_URL`   | `http://localhost:11434` | Endpoint do servidor Llama (compatível com Ollama)   |
 | `LLAMA_MODEL`      | `llama3`                 | Nome do modelo                                       |
 | `LLAMA_TIMEOUT`    | `60`                     | Timeout (segundos) da chamada ao Llama               |
+| `FINOPS_GROWTH_THRESHOLD` | `20.0`            | Crescimento (%) do custo total que dispara alerta    |
+| `FINOPS_CONCENTRATION_THRESHOLD` | `50.0`     | Participação (%) de um serviço que dispara alerta    |
+| `FINOPS_TOP_N`     | `5`                      | Quantidade de serviços no ranking "top N"            |
+| `REPORT_FORMAT`    | `txt`                    | Formato do relatório: `txt`, `json` ou `markdown`    |
 | `REPORTS_DIR`      | `reports`                | Pasta onde os relatórios são salvos                  |
 
 Exemplo de `.env` (não versionado):
@@ -231,6 +239,10 @@ COST_PERIOD_DAYS=30
 AI_ENABLED=true
 LLAMA_BASE_URL=http://localhost:11434
 LLAMA_MODEL=llama3
+FINOPS_GROWTH_THRESHOLD=20
+FINOPS_CONCENTRATION_THRESHOLD=50
+FINOPS_TOP_N=5
+REPORT_FORMAT=txt
 ```
 
 > A camada de IA é opcional. Com `AI_ENABLED=false`, ou com o Llama fora do ar, o relatório é gerado normalmente, apenas sem a interpretação (o motivo fica registrado no relatório).
@@ -256,6 +268,15 @@ uv run python src/test_aws.py
 uv run python -m src.aws.cost_explorer
 uv run python -m src.analysis.cost_analyzer
 ```
+
+**Escolher o formato do relatório** (via variável de ambiente):
+```bash
+# JSON
+REPORT_FORMAT=json uv run python -m src.main
+# Markdown
+REPORT_FORMAT=markdown uv run python -m src.main
+```
+> No PowerShell (Windows): `$env:REPORT_FORMAT="json"; uv run python -m src.main`
 
 ---
 
@@ -294,9 +315,28 @@ Comparação entre períodos:
   Variação: indisponível (período anterior com custo zero).
 
 ------------------------------------------------------------
+Alertas de FinOps:
+  - [WARNING] O serviço 'Amazon EC2' concentra 60.0% do custo total (limiar: 50.0%).
+  - [INFO] Top 3 serviços por custo: Amazon EC2 (30.00 USD), Amazon S3 (10.00 USD), AWS Lambda (10.00 USD).
+
+------------------------------------------------------------
 Interpretação da IA:
   Indisponível. Não foi possível conectar ao Llama em http://localhost:11434. ...
 ============================================================
+```
+
+O mesmo conteúdo pode sair em **JSON** (`REPORT_FORMAT=json`) ou **Markdown** (`REPORT_FORMAT=markdown`). Exemplo de JSON (resumido):
+```json
+{
+  "generated_at": "2026-10-01 14:30:00",
+  "period": "2026-09-01 a 2026-10-01",
+  "total_cost": 50.0,
+  "largest_service": "Amazon EC2",
+  "services": { "Amazon EC2": 30.0, "Amazon S3": 10.0, "AWS Lambda": 10.0 },
+  "percentages": { "Amazon EC2": 60.0, "Amazon S3": 20.0, "AWS Lambda": 20.0 },
+  "alerts": [ { "type": "concentration", "severity": "warning", "message": "..." } ],
+  "ai_interpretation": null
+}
 ```
 
 ---
@@ -322,7 +362,7 @@ data/*            # dados coletados (mantém apenas .gitkeep)
 
 ## Testes
 
-Os testes usam `pytest` e **mocks**, sem tocar na conta AWS real nem no Llama. Cobrem a lógica crítica: custo total, agrupamento (inclusive acumulado entre períodos), percentuais, maior serviço, comparação de períodos, período anterior zero (divisão por zero), dados vazios, valores negativos/ajustes, cliente de IA (conexão/timeout/resposta vazia) e geração de relatório.
+Os testes usam `pytest` e **mocks**, sem tocar na conta AWS real nem no Llama. Cobrem a lógica crítica: custo total, agrupamento (inclusive acumulado entre períodos), percentuais, maior serviço, comparação de períodos, período anterior zero (divisão por zero), dados vazios, valores negativos/ajustes, regras de FinOps (crescimento, concentração, top N), cliente de IA (conexão/timeout/resposta vazia) e geração de relatório nos formatos texto, JSON e Markdown.
 
 ```bash
 uv run pytest -v
@@ -345,13 +385,15 @@ uv run pytest -v
 - [x] Configuração centralizada em `src/config.py` (via `.env`).
 - [x] Tratamento de erros em todas as etapas.
 - [x] Suíte de testes com mocks.
+- [x] Regras determinísticas de FinOps (crescimento, concentração, top N) com limiares configuráveis.
+- [x] Relatório em múltiplos formatos: texto, JSON e Markdown.
 
 ### Em desenvolvimento / planejado
 
-- [ ] Identificação automática de desperdícios com regras determinísticas (além da IA).
-- [ ] Sistema de alertas.
+- [ ] Granularidade e janelas de tempo mais ricas (ex.: `DAILY`, últimos N meses).
+- [ ] CLI com argumentos (`--days`, `--format`, `--no-ai`).
+- [ ] Sistema de alertas (notificações a partir das regras de FinOps).
 - [ ] Suporte a outros provedores de IA (OpenAI, Claude, Gemini, Bedrock).
-- [ ] Formatos de relatório adicionais (Markdown, JSON, HTML).
 - [ ] Evolução para arquitetura serverless (Lambda, EventBridge, SNS, CloudWatch).
 - [ ] Execução automatizada / agendada.
 
@@ -359,9 +401,9 @@ uv run pytest -v
 
 ## Próximos passos
 
-1. Adicionar regras determinísticas de detecção de desperdício (ex.: variação acima de um limiar).
-2. Abstrair a camada de IA em uma interface para suportar múltiplos provedores.
-3. Oferecer saída do relatório em Markdown/JSON.
+1. Suportar granularidade `DAILY` e janelas por N meses, para enriquecer a comparação.
+2. Expor uma CLI com argumentos (período, formato, ligar/desligar IA).
+3. Abstrair a camada de IA em uma interface para suportar múltiplos provedores.
 
 ---
 
@@ -369,8 +411,8 @@ uv run pytest -v
 
 - A interpretação depende de um **Llama local** em execução; sem ele, o relatório sai sem a seção de IA (comportamento esperado e tratado).
 - A granularidade é mensal e a janela é baseada em dias corridos a partir de hoje.
-- Não há persistência histórica dos relatórios além dos arquivos `.txt` em `reports/`.
-- A detecção de "desperdício" hoje vem apenas da interpretação da IA, não de regras determinísticas.
+- Não há persistência histórica dos relatórios além dos arquivos salvos em `reports/`.
+- As regras de FinOps cobrem crescimento, concentração e ranking; outras heurísticas de desperdício ainda não são determinísticas.
 
 ---
 

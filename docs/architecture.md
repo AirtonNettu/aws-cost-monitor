@@ -23,8 +23,9 @@ Consequência técnica: a camada de IA pode ficar indisponível ou ser trocada p
 | Configuração | `src/config.py` | Lê variáveis de ambiente (via `python-dotenv`) e expõe parâmetros com defaults. |
 | Coleta AWS | `src/aws/cost_explorer.py` | Única camada que fala com a AWS. Consulta o Cost Explorer e organiza a resposta. Define `CostExplorerError`. |
 | Análise | `src/analysis/cost_analyzer.py` | Cálculo determinístico. `analyze_costs` e `compare_periods`. |
+| Regras de FinOps | `src/analysis/finops_rules.py` | Alertas determinísticos (crescimento, concentração, top N). `generate_alerts`. |
 | IA | `src/ai/llama_client.py` | Interpretação textual via Llama local. `interpret`, `_build_prompt`, `LlamaUnavailableError`. |
-| Relatório | `src/reports/report_generator.py` | Monta e grava o relatório. `build_report`, `save_report`, `_money`, `_format_period`. |
+| Relatório | `src/reports/report_generator.py` | Monta e grava o relatório em txt/json/markdown. `build_report`, `build_report_json`, `build_report_markdown`, `build_report_for_format`, `save_report`. |
 | Orquestração | `src/main.py` | Encadeia coleta → análise → comparação → IA → relatório. |
 | Atalho raiz | `main.py` | Importa e chama `src.main.main`. |
 | Teste de conexão | `src/test_aws.py` | Script independente que valida credenciais via STS `get_caller_identity`. |
@@ -39,11 +40,13 @@ src/aws/cost_explorer.py        get_costs() -> list[dict]
 src/analysis/cost_analyzer.py   analyze_costs() -> dict
                                 compare_periods() -> dict | None
        ↓
+src/analysis/finops_rules.py    generate_alerts() -> list[dict]
+       ↓
 src/ai/llama_client.py          interpret() -> str   (opcional)
        ↓
-src/reports/report_generator.py build_report() -> str; save_report() -> path
+src/reports/report_generator.py build_report_for_format() -> (str, fmt); save_report() -> path
        ↓
-reports/report_<timestamp>.txt
+reports/report_<timestamp>.(txt|json|md)
 ```
 
 Orquestração em `src/main.py` (função `run`).
@@ -61,13 +64,17 @@ Orquestração em `src/main.py` (função `run`).
 
 `compare_periods(costs)` compara os dois últimos períodos. Retorna `None` se houver menos de dois. A variação é `None` quando o total anterior é zero (evita divisão por zero).
 
+## Regras determinísticas de FinOps
+
+`generate_alerts(analysis, comparison)` aplica três regras sobre os dados já calculados e retorna uma lista de alertas (`type`, `severity`, `message`): crescimento do custo total acima de `FINOPS_GROWTH_THRESHOLD`, concentração de um serviço acima de `FINOPS_CONCENTRATION_THRESHOLD`, e ranking "top N" (`FINOPS_TOP_N`). É determinístico: não usa IA nem rede. Reforça a regra arquitetural — a "inteligência" financeira também é Python. Os alertas entram no relatório e no prompt da IA (que apenas os interpreta).
+
 ## Camada de IA
 
-`interpret(analysis, comparison)` monta o prompt com `_build_prompt` e faz `POST` em `{LLAMA_BASE_URL}/api/generate` com `{"model": LLAMA_MODEL, "prompt": ..., "stream": False}` e `timeout=LLAMA_TIMEOUT`. Lê `data["response"]`. Qualquer falha (conexão, timeout, HTTP, JSON inválido, resposta vazia) vira `LlamaUnavailableError`.
+`interpret(analysis, comparison, alerts=None)` monta o prompt com `_build_prompt` (incluindo os alertas, quando houver) e faz `POST` em `{LLAMA_BASE_URL}/api/generate` com `{"model": LLAMA_MODEL, "prompt": ..., "stream": False}` e `timeout=LLAMA_TIMEOUT`. Lê `data["response"]`. Qualquer falha (conexão, timeout, HTTP, JSON inválido, resposta vazia) vira `LlamaUnavailableError`.
 
 ## Geração de relatório
 
-`build_report(...)` produz um texto de largura fixa (60 caracteres de separador) com cabeçalho, período, custo total, custo por serviço ordenado desc, maior serviço, bloco de comparação e bloco de interpretação da IA. `save_report(...)` cria o diretório (default `reports/`) e grava `report_<YYYYMMDD_HHMMSS>.txt` em UTF-8, retornando o caminho.
+`build_report_for_format(config.REPORT_FORMAT, ...)` seleciona o builder conforme o formato (`txt`/`json`/`markdown`; desconhecido cai em `txt`) e retorna `(texto, formato)`. Os três builders derivam dos mesmos dados determinísticos (incluindo os alertas). `save_report(..., report_format=...)` cria o diretório (default `reports/`) e grava `report_<YYYYMMDD_HHMMSS>.<ext>` em UTF-8, com extensão por formato.
 
 ## Tratamento de erros
 

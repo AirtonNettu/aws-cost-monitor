@@ -12,7 +12,7 @@ Cria `.venv/` e instala runtime (`boto3`, `python-dotenv`, `requests`) e dev (`p
 
 ## Estrutura em uma frase
 
-`config` fornece parâmetros → `cost_explorer` coleta → `cost_analyzer` calcula → `llama_client` interpreta (opcional) → `report_generator` monta/salva → `main` orquestra. Detalhes em [code-structure.md](code-structure.md).
+`config` fornece parâmetros → `cost_explorer` coleta → `cost_analyzer` calcula → `finops_rules` gera alertas → `llama_client` interpreta (opcional) → `report_generator` monta/salva (txt/json/md) → `main` orquestra. Detalhes em [code-structure.md](code-structure.md).
 
 ## Executar
 
@@ -31,6 +31,15 @@ uv run python -m src.aws.cost_explorer      # imprime os períodos coletados ou 
 uv run python -m src.analysis.cost_analyzer # imprime os dicts de análise e comparação
 ```
 
+Escolher o formato do relatório (via `REPORT_FORMAT`):
+
+```bash
+REPORT_FORMAT=json uv run python -m src.main
+REPORT_FORMAT=markdown uv run python -m src.main
+# PowerShell (Windows):
+$env:REPORT_FORMAT="json"; uv run python -m src.main
+```
+
 Verificação de credenciais (script manual):
 
 ```bash
@@ -43,7 +52,7 @@ uv run python src/test_aws.py
 uv run pytest -v
 ```
 
-Estado atual: 20 passed. Não exigem AWS nem Llama (usam fixtures e `monkeypatch`). Ver [testing.md](testing.md).
+Estado atual: 39 passed. Não exigem AWS nem Llama (usam fixtures e `monkeypatch`). Ver [testing.md](testing.md).
 
 ## Sequência principal de execução
 
@@ -52,6 +61,7 @@ sequenceDiagram
     participant M as src/main.py (run)
     participant CE as cost_explorer
     participant AN as cost_analyzer
+    participant FR as finops_rules
     participant AI as llama_client
     participant RG as report_generator
 
@@ -68,17 +78,19 @@ sequenceDiagram
         AN-->>M: dict analysis
         M->>AN: compare_periods(costs)
         AN-->>M: dict | None
+        M->>FR: generate_alerts(analysis, comparison)
+        FR-->>M: list alerts
         opt AI_ENABLED
-            M->>AI: interpret(analysis, comparison)
+            M->>AI: interpret(analysis, comparison, alerts)
             alt disponível
                 AI-->>M: texto
             else LlamaUnavailableError
                 AI-->>M: erro (ai_error, segue)
             end
         end
-        M->>RG: build_report(...)
-        RG-->>M: texto
-        M->>RG: save_report(texto)
+        M->>RG: build_report_for_format(REPORT_FORMAT, ...)
+        RG-->>M: (texto, formato)
+        M->>RG: save_report(texto, report_format=formato)
         RG-->>M: caminho
         M-->>M: imprime relatório e caminho, return 0
     end

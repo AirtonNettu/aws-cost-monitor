@@ -16,7 +16,7 @@
   ```bash
   uv run pytest -v
   ```
-- Estado atual: **20 passed**. Os testes não acessam a AWS real nem um servidor Llama real.
+- Estado atual: **39 passed**. Os testes não acessam a AWS real nem um servidor Llama real.
 
 ## Estrutura
 
@@ -25,7 +25,9 @@ tests/
 ├── __init__.py
 ├── conftest.py                 # fixtures de dados fictícios
 ├── test_cost_analyzer.py       # 10 testes
+├── test_finops_rules.py        # 8 testes
 ├── test_llama_client.py        # 5 testes
+├── test_report_formats.py      # 11 testes
 └── test_report_generator.py    # 5 testes
 ```
 
@@ -62,6 +64,30 @@ Usa `monkeypatch` para substituir `llama_client.requests.post` por um fake (clas
 - `test_interpret_resposta_sem_conteudo`: `{"response": ""}` → `LlamaUnavailableError`.
 - `test_prompt_nao_recalcula_usa_valores_fornecidos`: o prompt contém "50.00 USD", "Amazon EC2" e "NÃO invente valores".
 
+## `test_finops_rules.py` (8)
+
+Valida as regras determinísticas (`generate_alerts` e helpers), usando as fixtures e `monkeypatch` sobre `config`:
+- sem custo positivo não gera alertas;
+- concentração dispara alerta (EC2 = 60% > 50%);
+- `top_services` presente quando há custo positivo;
+- crescimento acima do limiar dispara (100→150 = +50%);
+- crescimento abaixo do limiar não dispara (limiar elevado via `monkeypatch`);
+- sem comparação não gera `growth`;
+- `variation` None (período anterior zero) não gera `growth`;
+- `FINOPS_TOP_N=1` limita o ranking a um serviço.
+
+## `test_report_formats.py` (11)
+
+Valida JSON, Markdown e o seletor de formato (sem rede; usa `tmp_path` para o teste de gravação):
+- estrutura do JSON (total, serviços, maior serviço, alertas, comparação);
+- JSON com comparação e com `variation` None;
+- JSON sem custo positivo;
+- Markdown contém as seções e a tabela de serviços;
+- Markdown sem custo positivo;
+- seletor para `json` e `markdown` (com normalização de espaços/maiúsculas);
+- formato desconhecido cai em `txt`; default (`None`) é `txt` e igual a `build_report`;
+- `save_report` grava com a extensão correta por formato (`.txt`/`.json`/`.md`).
+
 ## `test_report_generator.py` (5)
 
 Chama `build_report` diretamente, sem IO de rede nem gravação em disco:
@@ -80,8 +106,9 @@ Chama `build_report` diretamente, sem IO de rede nem gravação em disco:
 
 - `src/aws/cost_explorer.py` (`get_costs` e o tratamento de `CostExplorerError`) — não há teste automatizado; depende de boto3/AWS.
 - `src/main.py` (`run`/`main`) — orquestração não coberta por teste.
-- `src/config.py` (`_get_int` e parsing de env) — sem teste dedicado.
-- `save_report` (gravação em disco) — não exercitada nos testes.
+- `src/config.py` (`_get_int`/`_get_float` e parsing de env) — sem teste dedicado (embora `config` seja manipulado via `monkeypatch` em alguns testes de FinOps).
 - `src/test_aws.py` — é um script manual, não um teste pytest.
+
+> `save_report` passou a ter cobertura (extensão por formato) em `test_report_formats.py`.
 
 Registrado como estado real da cobertura, sem alteração de código.

@@ -20,7 +20,13 @@ Inteiros são lidos por `_get_int(name, default)`: usa o default se a variável 
 | `LLAMA_MODEL` | Nome do modelo | `llama3` | `llama_client.interpret` (campo `model`) | Usa `llama3` |
 | `LLAMA_TIMEOUT` | Timeout (s) da chamada ao Llama | `60` | `llama_client.interpret` (`timeout=...`) | Usa `60` |
 | `AI_ENABLED` | Liga/desliga a camada de IA | `true` | `main.run` (decide se chama `interpret`) | Considerada `true` |
+| `FINOPS_GROWTH_THRESHOLD` | Crescimento (%) do custo total que dispara alerta | `20.0` | `finops_rules._check_growth` | Usa `20.0` |
+| `FINOPS_CONCENTRATION_THRESHOLD` | Participação (%) de um serviço que dispara alerta | `50.0` | `finops_rules._check_concentration` | Usa `50.0` |
+| `FINOPS_TOP_N` | Qtde de serviços no ranking "top N" | `5` | `finops_rules._top_services` | Usa `5` |
+| `REPORT_FORMAT` | Formato do relatório (`txt`/`json`/`markdown`) | `txt` | `main.run` → `report_generator.build_report_for_format` | Usa `txt`; valor desconhecido também cai em `txt` |
 | `REPORTS_DIR` | Diretório de saída dos relatórios | `reports` | `report_generator.save_report` | Usa `reports` |
+
+> `FINOPS_GROWTH_THRESHOLD` e `FINOPS_CONCENTRATION_THRESHOLD` são lidas por `_get_float`; `FINOPS_TOP_N` por `_get_int`. Valor não-numérico levanta `ValueError` na importação de `src.config`.
 
 > Observação técnica: embora a tabela do `COST_METRIC` seja configurável, `cost_analyzer._sum_period` e `analyze_costs` leem especificamente `Metrics["UnblendedCost"]["Amount"]`. Mudar `COST_METRIC` sem ajustar o analyzer pode gerar `KeyError`. Isto é registrado apenas como observação; o código não foi alterado.
 
