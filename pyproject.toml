@@ -3,6 +3,11 @@ name = "aws-cost-monitor"
 version = "0.1.0"
 description = "Ferramenta de monitoramento e análise de custos da AWS (FinOps) em Python, com camada de interpretação por IA desacoplada."
 readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "José Airton de Carvalho Neto" },
+]
+keywords = ["aws", "finops", "cost-explorer", "cost-management", "python", "boto3"]
 requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.43.104",

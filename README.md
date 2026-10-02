@@ -1,3 +1,5 @@
+<p align="right"><strong>Português</strong> · <a href="README.en.md">English</a></p>
+
 # AWS Cost Monitor — FinOps com IA
 
 Ferramenta de monitoramento e análise de custos da AWS desenvolvida em Python, com foco em práticas de **FinOps**. O projeto consulta os custos da conta através do **AWS Cost Explorer**, organiza os gastos por serviço, executa análises determinísticas em Python e usa uma camada de **IA (Llama local)** para interpretar os resultados e gerar um relatório final.
@@ -423,6 +425,22 @@ uv run pytest -v
 - A granularidade é mensal e a janela é baseada em dias corridos a partir de hoje.
 - Não há persistência histórica dos relatórios além dos arquivos salvos em `reports/`.
 - As regras de FinOps cobrem crescimento, concentração e ranking; outras heurísticas de desperdício ainda não são determinísticas.
+
+---
+
+## Documentação técnica
+
+Uma documentação técnica mais profunda, voltada a estudo, está em
+[`docs/`](docs/README.md), incluindo o
+[Guia de Estudo](docs/study-guide.md) que cobre os conceitos de FinOps e de
+design de software por trás do código.
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a Licença MIT — veja o arquivo
+[LICENSE](LICENSE).
 
 ---
 
