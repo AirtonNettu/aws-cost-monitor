@@ -4,7 +4,6 @@ Documentação derivada do código real do repositório. Descreve como o sistema
 
 ## Índice
 
-- [study-guide.md](study-guide.md) / [study-guide.en.md](study-guide.en.md) — **guia de estudo** (PT/EN): conceitos de FinOps, AWS e design por trás do código.
 - [architecture.md](architecture.md) — objetivo, componentes, fluxo, decisões arquiteturais.
 - [code-structure.md](code-structure.md) — estrutura de diretórios e detalhe por arquivo (inclui `finops_rules.py`).
 - [data-flow.md](data-flow.md) — fluxo de dados da AWS ao relatório (com diagramas).

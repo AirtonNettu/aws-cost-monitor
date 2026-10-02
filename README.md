@@ -430,10 +430,9 @@ uv run pytest -v
 
 ## Documentação técnica
 
-Uma documentação técnica mais profunda, voltada a estudo, está em
-[`docs/`](docs/README.md), incluindo o
-[Guia de Estudo](docs/study-guide.md) que cobre os conceitos de FinOps e de
-design de software por trás do código.
+A documentação técnica detalhada está em [`docs/`](docs/README.md): arquitetura,
+estrutura do código, fluxo de dados, configuração, permissões, integração com a
+IA, formatos de relatório, tratamento de erros e testes.
 
 ---
 

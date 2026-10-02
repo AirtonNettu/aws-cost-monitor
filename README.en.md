@@ -430,9 +430,9 @@ uv run pytest -v
 
 ## Technical documentation
 
-A deeper study-oriented write-up lives in [`docs/`](docs/README.md), including
-the [Study Guide](docs/study-guide.en.md) covering the FinOps and software-design
-concepts behind the code.
+Detailed technical documentation lives in [`docs/`](docs/README.md): architecture,
+code structure, data flow, configuration, permissions, AI integration, report
+formats, error handling, and testing.
 
 ---
 

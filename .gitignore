@@ -9,3 +9,12 @@ reports/*
 
 data/*
 !data/.gitkeep
+
+# Material de estudo pessoal (não versionado)
+APRENDA.md
+IMPLEMENTAR.md
+docs/arquitetura/
+docs/study-guide.md
+docs/study-guide.en.md
+docs/ci-and-env-explained.md
+docs/project-level-and-improvements.md
