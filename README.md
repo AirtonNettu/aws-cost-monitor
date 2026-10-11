@@ -2,6 +2,10 @@
 
 # AWS Cost Monitor — FinOps com IA
 
+## Painel visual experimental
+
+Na branch `feature/dashboard-v1`, consulte [o guia do dashboard local](dashboard/README.md). Ele funciona com demonstração e importação de relatórios JSON, sem consultar AWS. O fluxo de terminal abaixo permanece disponível.
+
 Ferramenta de monitoramento e análise de custos da AWS desenvolvida em Python, com foco em práticas de **FinOps**. O projeto consulta os custos da conta através do **AWS Cost Explorer**, organiza os gastos por serviço, executa análises determinísticas em Python e usa uma camada de **IA (Llama local)** para interpretar os resultados e gerar um relatório final.
 
 > **Princípio do projeto:** *Python calcula. IA interpreta.*
@@ -451,3 +455,5 @@ Projeto de portfólio de Cloud / FinOps / Python.
 
 - GitHub: [@AirtonNettu](https://github.com/AirtonNettu)
 - LinkedIn: [jose-airton-cloud](https://www.linkedin.com/in/jose-airton-cloud/)
+
+

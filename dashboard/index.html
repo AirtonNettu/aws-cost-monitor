@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>AWS Cost Monitor · Painel local</title><link rel="stylesheet" href="style.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <aside><a class="brand" href="#overview"><span class="mark">N</span> NETTO LABS</a><p class="eyebrow">AWS COST MONITOR</p><nav aria-label="Seções"><a href="#overview">Visão geral</a><a href="#services">Serviços</a><a href="#alerts">Alertas FinOps</a><a href="#ai">Interpretação</a><a href="#help">Como usar</a></nav><p class="local">Painel local<br>Python calcula. IA interpreta.</p></aside>
+  <main>
+    <header><div><p class="eyebrow">FINOPS / VISÃO GERAL</p><h1>Entenda seus custos.</h1><p class="muted">Uma visão clara do relatório, sem perder os detalhes.</p></div><div class="actions"><label class="button primary" for="file">Importar relatório JSON</label><input id="file" type="file" accept=".json,application/json"><button id="reset">Ver demonstração</button></div></header>
+    <p id="error" role="alert" hidden></p>
+    <section class="banner" aria-label="Origem dos dados"><strong id="source">Demonstração · dados fictícios</strong><span>Sem conexão automática com AWS. O arquivo é lido apenas neste navegador.</span></section>
+    <section id="overview"><div class="section-title"><h2>Resumo do período</h2><p id="period"></p></div><p class="muted" id="generated"></p><div class="cards">
+      <article><p>Custo total · USD</p><strong id="total"></strong><small>Valor informado pelo relatório</small></article>
+      <article><p>Maior serviço</p><strong class="service-name" id="largest"></strong><small>Entre serviços com custo positivo</small></article>
+      <article><p>Variação entre períodos</p><strong id="variation"></strong><small id="previous"></small></article>
+      <article><p>Alertas do relatório</p><strong id="count"></strong><small>Regras determinísticas do Python</small></article>
+    </div></section>
+    <section id="services" class="panel"><div class="section-title"><div><p class="eyebrow">DISTRIBUIÇÃO</p><h2>Custos por serviço</h2></div><label>Buscar serviço <input id="search" type="search" placeholder="Ex.: Amazon S3"></label></div><p class="muted">Serviços com custo positivo, ordenados por valor. Créditos podem fazer o total diferir da soma abaixo.</p><div class="table-wrap"><table><thead><tr><th scope="col">Serviço</th><th scope="col">Custo (USD)</th><th scope="col">Participação informada</th><th scope="col">Valor relativo ao maior</th></tr></thead><tbody id="rows"></tbody></table></div><p id="empty" hidden>Nenhum serviço encontrado.</p></section>
+    <div class="columns"><section id="alerts" class="panel"><p class="eyebrow">REGRAS FINOPS</p><h2>Pontos de atenção</h2><div id="alert-list"></div></section><section id="ai" class="panel"><p class="eyebrow">INTERPRETAÇÃO OPCIONAL</p><h2>Leitura com IA</h2><p class="muted">Exibe a interpretação já presente no relatório. Nenhum modelo é chamado pelo painel.</p><p id="ai-text" class="pre"></p><p id="ai-status" class="muted pre"></p></section></div>
+    <section id="help" class="panel"><p class="eyebrow">PRÓXIMOS PASSOS</p><h2>Comece com calma.</h2><ol><li>Explore esta demonstração sem conta AWS.</li><li>Quando tiver um relatório JSON do monitor, clique em “Importar relatório JSON”.</li><li>Consulte <a href="README.md">o guia do painel</a> para gerar um relatório e executar os testes.</li></ol><p class="muted">Sem histórico persistido: recarregar a página restaura a demonstração. Valores em USD; nenhuma conversão de moeda.</p></section>
+    <footer>NETTO LABS · AWS Cost Monitor · Dashboard V1</footer>
+  </main>
+</body></html>
