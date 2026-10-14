@@ -1,16 +1,22 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
 
 .env
+.env.*
+*.env
 
 reports/*
 !reports/.gitkeep
 
 data/*
 !data/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
 
-lambda_package.zip
+*.zip
 
 # Material de estudo pessoal (não versionado)
 APRENDA.md
