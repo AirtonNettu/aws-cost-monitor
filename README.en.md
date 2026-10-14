@@ -135,11 +135,15 @@ Llama endpoint, report format) are centralized in `src/config.py`.
 - **Python** `>= 3.14` (see `.python-version` and `pyproject.toml`)
 - **[uv](https://docs.astral.sh/uv/)** — environment and dependency management
 - **[boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)** — AWS SDK for Python
+- **[streamlit](https://streamlit.io/)** — interactive web dashboard for bill visualization and historical analysis
+- **[sqlite3](https://docs.python.org/3/library/sqlite3.html)** — local persistence for cost snapshots and execution history
+- **[Chart.js](https://www.chartjs.org/)** — interactive visual charts in the exportable HTML report
 - **[requests](https://requests.readthedocs.io/)** — HTTP call to the Llama server
-- **[python-dotenv](https://pypi.org/project/python-dotenv/)** — reads config from a `.env` file
-- **[pytest](https://docs.pytest.org/)** — tests (dev group)
+- **[python-dotenv](https://pypi.org/project/python-dotenv/)** — reads config from a `.env` file (optional in Serverless runtime)
+- **[pytest](https://docs.pytest.org/)** — automated unit and integration tests with mocks (55 tests)
 - **AWS Cost Explorer** / **AWS STS** — cost querying and identity verification
-- **Local Llama** (e.g. [Ollama](https://ollama.com/)) — interpretation model
+- **AWS Lambda** / **Amazon EventBridge** / **Amazon S3** — zero-cost (Free Tier) 24/7 serverless architecture
+- **Local Llama** (e.g. [Ollama](https://ollama.com/)) — decoupled AI interpretation model
 
 ---
 
@@ -148,23 +152,43 @@ Llama endpoint, report format) are centralized in `src/config.py`.
 ```
 aws-cost-monitor/
 ├── src/
-│   ├── main.py                 # orchestrates the complete flow
+│   ├── main.py                 # orchestrates the complete flow (CLI with flags)
 │   ├── config.py               # centralized configuration (.env / env vars)
 │   ├── test_aws.py             # AWS connection test (STS)
 │   ├── aws/
-│   │   └── cost_explorer.py    # cost collection from Cost Explorer
+│   │   └── cost_explorer.py    # Cost Explorer collection (DAILY/MONTHLY, pagination, tags)
 │   ├── analysis/
 │   │   ├── cost_analyzer.py    # deterministic cost analysis
-│   │   └── finops_rules.py     # deterministic FinOps rules (alerts)
+│   │   └── finops_rules.py     # FinOps rules (growth, concentration, ranking, tags)
 │   ├── ai/
 │   │   └── llama_client.py     # AI interpretation layer (Llama)
+│   ├── database/
+│   │   └── repository.py       # SQLite historical snapshot persistence
+│   ├── dashboard/
+│   │   └── app.py              # Streamlit interactive web dashboard
 │   └── reports/
-│       └── report_generator.py # report generation/writing (txt/json/md)
-├── tests/                      # tests with pytest + mocks
-├── data/.gitkeep               # data (content not versioned)
+│       └── report_generator.py # report generation (txt/json/md/html)
+├── tests/                      # test suite with pytest + mocks (55 tests)
+│   ├── conftest.py
+│   ├── test_cli.py
+│   ├── test_cost_analyzer.py
+│   ├── test_cost_explorer.py
+│   ├── test_database.py
+│   ├── test_finops_rules.py
+│   ├── test_lambda_handler.py
+│   ├── test_llama_client.py
+│   ├── test_report_formats.py
+│   └── test_report_generator.py
+├── docs/                       # detailed technical documentation
+│   ├── architecture.md
+│   ├── aws-permissions.md
+│   ├── reports.md
+│   └── serverless-deploy.md    # Lambda + EventBridge + S3 Website deploy guide
+├── data/.gitkeep               # SQLite database location (data/costs.db git-ignored)
 ├── reports/.gitkeep            # generated reports (content not versioned)
-├── docs/                       # technical documentation
-├── main.py                     # shortcut that delegates to src/main.py
+├── dashboard.py                # entrypoint shortcut for Streamlit dashboard
+├── lambda_function.py          # serverless AWS Lambda handler
+├── main.py                     # shortcut delegating to src/main.py
 ├── LICENSE
 ├── pyproject.toml
 ├── uv.lock
@@ -278,8 +302,9 @@ without `.env`.
 |--------------------|--------------------------|------------------------------------------------------|
 | `AWS_REGION`       | `us-east-1`              | Cost Explorer client region                          |
 | `COST_PERIOD_DAYS` | `30`                     | Analysis window in days                              |
-| `COST_GRANULARITY` | `MONTHLY`                | Query granularity                                    |
+| `COST_GRANULARITY` | `MONTHLY`                | Query granularity (`MONTHLY` or `DAILY`)             |
 | `COST_METRIC`      | `UnblendedCost`          | Cost metric                                          |
+| `COST_TAG_KEY`     | `None` (optional)        | Cost Allocation Tag key (e.g. `Environment`)         |
 | `AI_ENABLED`       | `true`                   | Enables/disables the AI layer                        |
 | `LLAMA_BASE_URL`   | `http://localhost:11434` | Llama server endpoint (Ollama-compatible)            |
 | `LLAMA_MODEL`      | `llama3`                 | Model name                                           |
@@ -287,20 +312,23 @@ without `.env`.
 | `FINOPS_GROWTH_THRESHOLD` | `20.0`            | Total-cost growth (%) that triggers an alert         |
 | `FINOPS_CONCENTRATION_THRESHOLD` | `50.0`     | Service share (%) that triggers an alert             |
 | `FINOPS_TOP_N`     | `5`                      | Number of services in the "top N" ranking            |
-| `REPORT_FORMAT`    | `txt`                    | Report format: `txt`, `json`, or `markdown`          |
+| `REPORT_FORMAT`    | `txt`                    | Report format: `txt`, `json`, `markdown`, or `html`  |
 | `REPORTS_DIR`      | `reports`                | Folder where reports are saved                       |
+| `S3_BUCKET_NAME`   | `None` (optional)        | S3 bucket name for serverless automated web deploy   |
 
 Example `.env` (not versioned):
 ```env
 AWS_REGION=us-east-1
 COST_PERIOD_DAYS=30
+COST_GRANULARITY=MONTHLY
+COST_TAG_KEY=Environment
 AI_ENABLED=true
 LLAMA_BASE_URL=http://localhost:11434
 LLAMA_MODEL=llama3
 FINOPS_GROWTH_THRESHOLD=20
 FINOPS_CONCENTRATION_THRESHOLD=50
 FINOPS_TOP_N=5
-REPORT_FORMAT=txt
+REPORT_FORMAT=html
 ```
 
 > The AI layer is optional. With `AI_ENABLED=false`, or with Llama down, the
@@ -311,32 +339,52 @@ REPORT_FORMAT=txt
 
 ## Running
 
-**Complete flow** (collection → analysis → AI → report):
+### 1. Interactive Web Dashboard (Streamlit)
+Access the web graphical dashboard with interactive charts, KPIs, FinOps alert center, and historical invoices saved in SQLite:
 ```bash
-uv run python -m src.main
-# or, via the root shortcut:
+uv run streamlit run dashboard.py
+# or alternatively:
+uv run python main.py --dashboard
+```
+
+### 2. Command Line Interface (CLI with flags)
+Customize your run directly using command-line arguments:
+```bash
+# Full report in the terminal
 uv run python main.py
+
+# Standalone interactive HTML report with Chart.js charts (saved to reports/)
+uv run python main.py --format html
+
+# Daily granularity analysis for the last 15 days in Markdown
+uv run python main.py --days 15 --granularity DAILY --format markdown
+
+# Filter by AWS Cost Allocation Tag (FinOps)
+uv run python main.py --tag Environment --format html
+
+# Fast execution without AI outputting structured JSON
+uv run python main.py --format json --no-ai
+
+# View all CLI options
+uv run python main.py --help
 ```
 
-**Check the AWS connection:**
+### 3. Serverless Deployment on AWS (100% Free Tier)
+The project includes serverless automation to monitor costs 24/7 at zero infrastructure expense:
+- **AWS Lambda** runs daily triggered by an **Amazon EventBridge** schedule (`cron(0 11 * * ? *)`).
+- Generates the interactive HTML dashboard in ~4 seconds and deploys it directly to an **Amazon S3 Static Website Hosting** bucket.
+- Public web access with zero computing charge on page reloads and no risk of API billing spikes.
+- Check the complete guide in [`docs/serverless-deploy.md`](docs/serverless-deploy.md).
+
+### 4. Diagnostic Scripts
 ```bash
+# Check AWS STS credentials and identity
 uv run python src/test_aws.py
-```
 
-**Run only the collection or only the analysis** (useful for debugging):
-```bash
+# Run standalone modules (useful for debugging)
 uv run python -m src.aws.cost_explorer
 uv run python -m src.analysis.cost_analyzer
 ```
-
-**Choose the report format** (via environment variable):
-```bash
-# JSON
-REPORT_FORMAT=json uv run python -m src.main
-# Markdown
-REPORT_FORMAT=markdown uv run python -m src.main
-```
-> On PowerShell (Windows): `$env:REPORT_FORMAT="json"; uv run python -m src.main`
 
 ---
 
@@ -367,11 +415,25 @@ Cost per service:
   - AWS Lambda: 10.00 USD (20.0%)
 
 Largest service: Amazon EC2
-...
+
+------------------------------------------------------------
+Period Comparison:
+  Previous period: 0.00 USD
+  Current period:  50.00 USD
+  Variation: unavailable (previous period cost was zero).
+
+------------------------------------------------------------
+FinOps Alerts:
+  - [WARNING] Service 'Amazon EC2' accounts for 60.0% of total cost (threshold: 50.0%).
+  - [INFO] Top 3 services by cost: Amazon EC2 (30.00 USD), Amazon S3 (10.00 USD), AWS Lambda (10.00 USD).
+
+------------------------------------------------------------
+AI Interpretation:
+  Unavailable. Could not connect to Llama at http://localhost:11434. ...
+============================================================
 ```
 
-The same content can be produced as **JSON** (`REPORT_FORMAT=json`) or
-**Markdown** (`REPORT_FORMAT=markdown`).
+The same content can be produced as **JSON** (`REPORT_FORMAT=json`), **Markdown** (`REPORT_FORMAT=markdown`), or standalone **HTML** (`REPORT_FORMAT=html`).
 
 ---
 
@@ -379,19 +441,28 @@ The same content can be produced as **JSON** (`REPORT_FORMAT=json`) or
 
 - **Never** store AWS credentials in Git.
 - Provide credentials via the **AWS CLI** / environment variables.
-- Apply **least-privilege IAM**.
-- **Do not version** the `.env` file or potentially sensitive data/reports.
+- Apply **least-privilege IAM** permissions (`ce:GetCostAndUsage`, `sts:GetCallerIdentity`).
+- **Do not commit** `.env` files, SQLite databases, or generated reports.
+
+The `.gitignore` strictly prevents versioning of:
+```
+.venv/            # virtual environment
+__pycache__/      # Python bytecode cache
+*.pyc             # compiled Python files
+.pytest_cache/    # pytest test cache
+.env              # environment files and secrets (.env, .env.*, *.env)
+reports/*         # generated reports (keeps .gitkeep)
+data/*            # collected data and SQLite databases (keeps .gitkeep)
+*.db, *.sqlite    # SQLite database files
+*.zip             # Lambda deployment packages
+```
 
 ---
 
 ## Testing
 
 Tests use `pytest` and **mocks**, without touching the real AWS account or Llama.
-They cover the critical logic: total cost, grouping (including accumulation
-across periods), percentages, largest service, period comparison, previous
-period of zero (division by zero), empty data, negative values/adjustments,
-FinOps rules (growth, concentration, top N), the AI client (connection/timeout/
-empty response), and report generation in text, JSON, and Markdown formats.
+They cover all critical logic: total cost, grouping (including accumulation across periods), percentages, largest service, period comparison, division-by-zero handling, empty data, negative values/adjustments, FinOps rules (growth, concentration, top N, untagged resources), SQLite persistence, AWS Lambda handler, CLI arguments, AI client, and multi-format report generation (text, JSON, Markdown, HTML).
 
 ```bash
 uv run pytest -v
@@ -401,32 +472,38 @@ uv run pytest -v
 
 ## Roadmap
 
-### Already implemented (V1)
+### Already implemented (v0.1.0 & v0.2.0)
 
-- [x] Python environment with `uv`.
+- [x] Modern Python environment with `uv`.
 - [x] AWS connection check via STS.
-- [x] Cost collection in Cost Explorer with configurable parameters.
+- [x] Cost collection in Cost Explorer with dynamic parameters.
+- [x] Support for `DAILY` and `MONTHLY` granularities with automatic pagination (`NextPageToken`).
+- [x] Support for AWS Cost Allocation Tags filtering (`--tag`).
 - [x] Deterministic analysis returning structured data (total, positives, %, largest service).
 - [x] Period comparison with division-by-zero handling.
+- [x] Deterministic FinOps rules (growth, concentration, top N, and untagged resources alert).
 - [x] Decoupled AI layer (Llama) with unavailability handling.
-- [x] Report generation and saving.
-- [x] Full-flow orchestration in `src/main.py`.
-- [x] Centralized configuration in `src/config.py` (via `.env`).
-- [x] Error handling in every step.
-- [x] Test suite with mocks.
-- [x] Deterministic FinOps rules (growth, concentration, top N) with configurable thresholds.
-- [x] Report in multiple formats: text, JSON, and Markdown.
+- [x] Report generation in multiple formats: text, JSON, Markdown, and interactive HTML with Chart.js.
+- [x] Interactive and responsive web dashboard in Streamlit (`dashboard.py`).
+- [x] Historical snapshot persistence in local SQLite (`data/costs.db`).
+- [x] Full CLI with argument parsing (`--days`, `--granularity`, `--format`, `--tag`, `--no-ai`, `--no-db`, `--dashboard`).
+- [x] Serverless 100% Free Tier architecture (AWS Lambda + Amazon EventBridge daily cron + Amazon S3 Website).
+- [x] Complete automated test suite with mocks (55 tests, 100% passing).
+- [x] Centralized configuration in `src/config.py` with robust error handling at each step.
 
-### In progress / planned
+### In progress / planned (v0.3.0)
 
-- [ ] Richer granularity and time windows (e.g. `DAILY`, last N months).
-- [ ] CLI with arguments (`--days`, `--format`, `--no-ai`).
-- [ ] Alerting system (notifications from the FinOps rules).
-- [ ] Support for other AI providers (OpenAI, Claude, Gemini, Bedrock).
-- [ ] Evolution to serverless architecture (Lambda, EventBridge, SNS, CloudWatch).
-- [ ] Automated / scheduled execution.
+- [ ] Push notification alerts (SNS / Slack / Discord / Email based on FinOps rules).
+- [ ] Support for multiple AI providers via abstract interface (OpenAI, Claude, Gemini, Amazon Bedrock).
+- [ ] Statistical anomaly detection using historical SQLite baseline.
 
 ---
+
+## Current limitations
+
+- AI interpretation relies on a running **local Llama** (or Ollama-compatible API); without it, reports are generated normally with intact calculations and FinOps alerts.
+- In the AWS Lambda serverless deployment, the local AI layer is disabled by default (`AI_ENABLED=false`) to ensure fast execution (~4s) and strictly remain within AWS Free Tier limits.
+- AWS Cost Explorer has an inherent delay of up to 24 hours for recent data ingestion on AWS's end.
 
 ## Technical documentation
 
