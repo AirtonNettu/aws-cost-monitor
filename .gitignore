@@ -10,6 +10,8 @@ reports/*
 data/*
 !data/.gitkeep
 
+lambda_package.zip
+
 # Material de estudo pessoal (não versionado)
 APRENDA.md
 IMPLEMENTAR.md

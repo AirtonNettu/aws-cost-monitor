@@ -13,6 +13,7 @@ dependencies = [
     "boto3>=1.43.104",
     "python-dotenv>=1.2.3",
     "requests>=2.32.0",
+    "streamlit>=1.65.0",
 ]
 
 [dependency-groups]

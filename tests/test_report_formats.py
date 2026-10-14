@@ -7,10 +7,47 @@ from src.analysis.finops_rules import generate_alerts
 from src.reports.report_generator import (
     build_report,
     build_report_for_format,
+    build_report_html,
     build_report_json,
     build_report_markdown,
     save_report,
 )
+
+
+def test_html_estrutura_basica(costs_single_period):
+    analysis = analyze_costs(costs_single_period)
+    alerts = generate_alerts(analysis, None)
+    html_out = build_report_html(
+        costs_single_period,
+        analysis,
+        None,
+        ai_interpretation="Custo controlado.",
+        alerts=alerts,
+    )
+    assert "<!DOCTYPE html>" in html_out
+    assert "AWS Cost Monitor" in html_out
+    assert "Amazon EC2" in html_out
+    assert "$50.00" in html_out
+    assert "Custo controlado." in html_out
+    assert "costChart" in html_out
+
+
+def test_seletor_html(costs_single_period):
+    analysis = analyze_costs(costs_single_period)
+    texto, fmt = build_report_for_format("  HTML ", costs_single_period, analysis, None)
+    assert fmt == "html"
+    assert "<!DOCTYPE html>" in texto
+
+
+def test_save_report_extensao_por_formato(tmp_path):
+    p_txt = save_report("conteudo", directory=str(tmp_path), report_format="txt")
+    p_json = save_report("{}", directory=str(tmp_path), report_format="json")
+    p_md = save_report("# md", directory=str(tmp_path), report_format="markdown")
+    p_html = save_report("<html></html>", directory=str(tmp_path), report_format="html")
+    assert p_txt.endswith(".txt")
+    assert p_json.endswith(".json")
+    assert p_md.endswith(".md")
+    assert p_html.endswith(".html")
 
 
 def test_json_estrutura_basica(costs_single_period):

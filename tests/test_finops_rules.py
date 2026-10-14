@@ -76,3 +76,17 @@ def test_top_n_respeita_configuracao(monkeypatch, costs_single_period):
     # Apenas o maior serviço (EC2) deve aparecer; S3/Lambda não.
     assert "Amazon EC2" in top["message"]
     assert "AWS Lambda" not in top["message"]
+
+
+def test_alerta_recursos_sem_tag():
+    analysis = {
+        "total_cost": 100.0,
+        "positive_services": {"Environment: prod": 60.0, "Environment: Untagged": 40.0},
+        "percentages": {"Environment: prod": 60.0, "Environment: Untagged": 40.0},
+    }
+    alerts = generate_alerts(analysis, None)
+    assert any(a["type"] == "untagged_resources" for a in alerts)
+    untagged_alert = next(a for a in alerts if a["type"] == "untagged_resources")
+    assert "Untagged" in untagged_alert["message"]
+    assert untagged_alert["severity"] == "warning"
+

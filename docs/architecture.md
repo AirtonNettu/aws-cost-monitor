@@ -21,12 +21,14 @@ Consequência técnica: a camada de IA pode ficar indisponível ou ser trocada p
 | Componente | Arquivo | Responsabilidade |
 |---|---|---|
 | Configuração | `src/config.py` | Lê variáveis de ambiente (via `python-dotenv`) e expõe parâmetros com defaults. |
-| Coleta AWS | `src/aws/cost_explorer.py` | Única camada que fala com a AWS. Consulta o Cost Explorer e organiza a resposta. Define `CostExplorerError`. |
+| Coleta AWS | `src/aws/cost_explorer.py` | Única camada que fala com a AWS. Consulta o Cost Explorer, trata paginação e organiza a resposta. Define `CostExplorerError`. |
 | Análise | `src/analysis/cost_analyzer.py` | Cálculo determinístico. `analyze_costs` e `compare_periods`. |
 | Regras de FinOps | `src/analysis/finops_rules.py` | Alertas determinísticos (crescimento, concentração, top N). `generate_alerts`. |
 | IA | `src/ai/llama_client.py` | Interpretação textual via Llama local. `interpret`, `_build_prompt`, `LlamaUnavailableError`. |
-| Relatório | `src/reports/report_generator.py` | Monta e grava o relatório em txt/json/markdown. `build_report`, `build_report_json`, `build_report_markdown`, `build_report_for_format`, `save_report`. |
-| Orquestração | `src/main.py` | Encadeia coleta → análise → comparação → IA → relatório. |
+| Relatório | `src/reports/report_generator.py` | Monta e grava o relatório em txt/json/markdown/html. `build_report`, `build_report_json`, `build_report_markdown`, `build_report_html`, `build_report_for_format`, `save_report`. |
+| Persistência Local | `src/database/repository.py` | Armazena snapshots das execuções em SQLite para tendências e histórico. `save_run`, `get_history`, `get_latest_run`. |
+| Dashboard Web | `src/dashboard/app.py` / `dashboard.py` | Interface visual interativa em Streamlit com KPIs, gráficos e filtros. |
+| Orquestração & CLI | `src/main.py` | Parser de argumentos (`argparse`) e encadeia coleta → análise → comparação → IA → relatório → persistência. |
 | Atalho raiz | `main.py` | Importa e chama `src.main.main`. |
 | Teste de conexão | `src/test_aws.py` | Script independente que valida credenciais via STS `get_caller_identity`. |
 
@@ -46,7 +48,9 @@ src/ai/llama_client.py          interpret() -> str   (opcional)
        ↓
 src/reports/report_generator.py build_report_for_format() -> (str, fmt); save_report() -> path
        ↓
-reports/report_<timestamp>.(txt|json|md)
+src/database/repository.py      save_run() -> SQLite (data/costs.db)
+       ↓
+reports/report_<timestamp>.(txt|json|md|html)   e/ou   Dashboard Streamlit
 ```
 
 Orquestração em `src/main.py` (função `run`).

@@ -263,32 +263,42 @@ REPORT_FORMAT=txt
 
 ## Execução
 
-**Fluxo completo** (coleta → análise → IA → relatório):
+### 1. Dashboard Web Interativo (Streamlit)
+Acesse a interface gráfica com gráficos, KPIs, central de alertas FinOps e histórico de faturas:
 ```bash
-uv run python -m src.main
-# ou, pelo atalho da raiz:
+uv run streamlit run dashboard.py
+# ou alternativamente:
+uv run python main.py --dashboard
+```
+
+### 2. Linha de Comando (CLI com argumentos)
+Você pode customizar o período, granularidade e formato diretamente por flags:
+```bash
+# Relatório completo no terminal
 uv run python main.py
+
+# Relatório HTML interativo (abre no navegador com gráficos)
+uv run python main.py --format html
+
+# Análise dos últimos 15 dias com granularidade diária
+uv run python main.py --days 15 --granularity DAILY --format markdown
+
+# Execução rápida sem IA e saída em JSON
+uv run python main.py --format json --no-ai
+
+# Ver todas as opções disponíveis
+uv run python main.py --help
 ```
 
-**Verificar a conexão com a AWS:**
+### 3. Scripts individuais de diagnóstico
 ```bash
+# Verificar a conexão e credenciais com a AWS (STS)
 uv run python src/test_aws.py
-```
 
-**Rodar só a coleta ou só a análise** (útil para depuração):
-```bash
+# Rodar só a coleta ou só a análise (útil para depuração)
 uv run python -m src.aws.cost_explorer
 uv run python -m src.analysis.cost_analyzer
 ```
-
-**Escolher o formato do relatório** (via variável de ambiente):
-```bash
-# JSON
-REPORT_FORMAT=json uv run python -m src.main
-# Markdown
-REPORT_FORMAT=markdown uv run python -m src.main
-```
-> No PowerShell (Windows): `$env:REPORT_FORMAT="json"; uv run python -m src.main`
 
 ---
 
@@ -384,38 +394,39 @@ uv run pytest -v
 
 ## Roadmap
 
-### Já implementado (V1)
+### Já implementado (V1 & V1.1)
 
 - [x] Ambiente Python com `uv`.
 - [x] Verificação de conexão com a AWS via STS.
 - [x] Coleta de custos no Cost Explorer com parâmetros configuráveis.
+- [x] Suporte a granularidade `DAILY` e `MONTHLY` com paginação automática (`NextPageToken`).
 - [x] Análise determinística retornando dados estruturados (total, positivos, %, maior serviço).
 - [x] Comparação entre períodos com tratamento de divisão por zero.
 - [x] Camada de IA (Llama) desacoplada, com tratamento de indisponibilidade.
-- [x] Geração e gravação de relatório.
+- [x] Geração e gravação de relatório em múltiplos formatos: texto, JSON, Markdown e HTML interativo com Chart.js.
+- [x] Dashboard web interativo e responsivo em Streamlit (`dashboard.py`).
+- [x] Persistência histórica das faturas e análises em SQLite local (`data/costs.db`).
+- [x] CLI com argumentos (`--days`, `--granularity`, `--format`, `--no-ai`, `--dashboard`).
 - [x] Orquestração do fluxo completo em `src/main.py`.
 - [x] Configuração centralizada em `src/config.py` (via `.env`).
 - [x] Tratamento de erros em todas as etapas.
-- [x] Suíte de testes com mocks.
+- [x] Suíte completa de testes com mocks (50+ testes).
 - [x] Regras determinísticas de FinOps (crescimento, concentração, top N) com limiares configuráveis.
-- [x] Relatório em múltiplos formatos: texto, JSON e Markdown.
 
 ### Em desenvolvimento / planejado
 
-- [ ] Granularidade e janelas de tempo mais ricas (ex.: `DAILY`, últimos N meses).
-- [ ] CLI com argumentos (`--days`, `--format`, `--no-ai`).
-- [ ] Sistema de alertas (notificações a partir das regras de FinOps).
+- [ ] Sistema de alertas push (notificações SNS / Slack / E-mail a partir das regras de FinOps).
 - [ ] Suporte a outros provedores de IA (OpenAI, Claude, Gemini, Bedrock).
 - [ ] Evolução para arquitetura serverless (Lambda, EventBridge, SNS, CloudWatch).
-- [ ] Execução automatizada / agendada.
+- [ ] Execução automatizada / agendada no cron.
 
 ---
 
 ## Próximos passos
 
-1. Suportar granularidade `DAILY` e janelas por N meses, para enriquecer a comparação.
-2. Expor uma CLI com argumentos (período, formato, ligar/desligar IA).
-3. Abstrair a camada de IA em uma interface para suportar múltiplos provedores.
+1. Sistema de notificação push (Slack/Discord/SNS) para alertas críticos de FinOps.
+2. Abstrair a camada de IA em uma interface para suportar múltiplos provedores (OpenAI/Gemini/Bedrock).
+3. Empacotamento serverless com AWS Lambda e EventBridge.
 
 ---
 

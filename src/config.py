@@ -10,10 +10,12 @@ configuradas localmente (AWS CLI / variáveis de ambiente padrão da AWS).
 
 import os
 
-from dotenv import load_dotenv
-
-# Carrega variáveis de um arquivo .env na raiz do projeto, se existir.
-load_dotenv()
+# Carrega variáveis de um arquivo .env na raiz do projeto se python-dotenv estiver instalado.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 
 def _get_int(name, default):
@@ -53,6 +55,9 @@ COST_PERIOD_DAYS = _get_int("COST_PERIOD_DAYS", 30)
 COST_GRANULARITY = os.getenv("COST_GRANULARITY", "MONTHLY")
 COST_METRIC = os.getenv("COST_METRIC", "UnblendedCost")
 
+# Tag de alocação de custos opcional (ex: "Environment", "Project", "Team")
+COST_TAG_KEY = os.getenv("COST_TAG_KEY", None)
+
 
 # --- IA / Llama ----------------------------------------------------------
 # Endpoint de um servidor Llama local compatível com a API /api/generate do
@@ -80,6 +85,11 @@ FINOPS_TOP_N = _get_int("FINOPS_TOP_N", 5)
 # --- Relatórios ----------------------------------------------------------
 REPORTS_DIR = os.getenv("REPORTS_DIR", "reports")
 
-# Formato do relatório gerado: "txt" (default), "json" ou "markdown".
+# Formato do relatório gerado: "txt" (default), "json", "markdown" ou "html".
 # Valor é normalizado (sem espaços, minúsculo) em src/reports/report_generator.py.
 REPORT_FORMAT = os.getenv("REPORT_FORMAT", "txt")
+
+
+# --- Banco de Dados / Persistência Local ---------------------------------
+DATABASE_PATH = os.getenv("DATABASE_PATH", "data/costs.db")
+

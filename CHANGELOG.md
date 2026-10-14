@@ -8,11 +8,19 @@ e o projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [Não lançado]
 
 ### Planejado
-- Granularidade `DAILY` e janelas por N meses.
-- CLI com argumentos (`--days`, `--format`, `--no-ai`).
-- Sistema de alertas (notificações a partir das regras de FinOps).
+- Sistema de alertas push (notificações SNS / Slack a partir das regras de FinOps).
 - Suporte a outros provedores de IA (OpenAI, Claude, Gemini, Bedrock).
 - Evolução para arquitetura serverless (Lambda, EventBridge, SNS, CloudWatch).
+
+## [0.2.0] — 2026-10-13
+
+### Adicionado
+- Dashboard interativo moderno com Streamlit (`dashboard.py` / `src/dashboard/app.py`), exibindo KPIs executivos, gráfico temporal, distribuição por serviço, ranking e central de alertas FinOps.
+- Novo formato de relatório HTML standalone (`build_report_html` / `--format html`) com Tailwind styling e gráfico interativo via Chart.js.
+- Persistência local em SQLite (`src/database/repository.py` / `data/costs.db`) para histórico de execuções e análise de tendências de longo prazo.
+- Interface de linha de comando com argumentos (`argparse`), com flags `--days`, `--granularity`, `--format`, `--no-ai`, `--dashboard` e `--no-db`.
+- Suporte a granularidade `DAILY` e tratamento de paginação automática (`NextPageToken`) em `src/aws/cost_explorer.py`.
+- Suíte de testes expandida para 51 testes unitários com mocks cobrindo todas as novas funcionalidades.
 
 ## [0.1.0] — 2026-10-01
 

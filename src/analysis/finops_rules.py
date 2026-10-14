@@ -99,4 +99,26 @@ def generate_alerts(analysis, comparison):
     if top:
         alerts.append(top)
 
+    untagged = _check_untagged(analysis)
+    if untagged:
+        alerts.append(untagged)
+
     return alerts
+
+
+def _check_untagged(analysis, threshold=10.0):
+    """Alerta quando recursos sem tag (Untagged) superam o limiar do custo total."""
+    percentages = analysis.get("percentages", {})
+    for item, pct in percentages.items():
+        if "untagged" in item.lower() and pct >= threshold:
+            return {
+                "type": "untagged_resources",
+                "severity": "warning",
+                "message": (
+                    f"Recursos sem tag ('{item}') representam {pct:.1f}% do custo "
+                    f"total (limiar: {threshold:.1f}%). Boas práticas de FinOps "
+                    f"recomendam taguear todos os recursos para alocação precisa."
+                ),
+            }
+    return None
+

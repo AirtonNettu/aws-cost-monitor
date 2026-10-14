@@ -8,16 +8,17 @@
 - `build_report(...)` monta o relatório em **texto**.
 - `build_report_json(...)` monta em **JSON**.
 - `build_report_markdown(...)` monta em **Markdown**.
+- `build_report_html(...)` monta em **HTML** interativo standalone.
 - `build_report_for_format(report_format, ...)` seleciona o builder e retorna `(texto, formato_normalizado)`.
 - `save_report(...)` grava em disco com a extensão correta.
 
-São chamadas por `src/main.py` (função `run`), que escolhe o formato por `config.REPORT_FORMAT`.
+São chamadas por `src/main.py` (função `run`), que escolhe o formato por `config.REPORT_FORMAT` ou argumento `--format`.
 
 ## Formatos
 
-O formato é definido por `REPORT_FORMAT` (`txt` default, `json` ou `markdown`). Formato desconhecido cai em `txt`. A extensão do arquivo segue `_FORMAT_EXTENSIONS`: `txt` → `.txt`, `json` → `.json`, `markdown` → `.md`.
+O formato é definido por `REPORT_FORMAT` (`txt` default, `json`, `markdown` ou `html`). Formato desconhecido cai em `txt`. A extensão do arquivo segue `_FORMAT_EXTENSIONS`: `txt` → `.txt`, `json` → `.json`, `markdown` → `.md`, `html` → `.html`.
 
-Os três formatos derivam dos **mesmos dados determinísticos**; mudam apenas a apresentação.
+Os quatro formatos derivam dos **mesmos dados determinísticos**; mudam apenas a apresentação.
 
 ### Texto (`.txt`)
 
@@ -63,9 +64,18 @@ Interpretação da IA:
 
 `build_report_markdown` produz um documento com título, metadados em lista, uma **tabela** de custo por serviço, e seções "Comparação entre períodos", "Alertas de FinOps" e "Interpretação da IA".
 
+### HTML (`.html`)
+
+`build_report_html` produz uma página standalone interativa e responsiva com visual moderno. Inclui:
+- Cards com indicadores-chave (KPIs): Custo Total, Variação %, Maior Serviço e Alertas FinOps.
+- Gráfico Donut de distribuição dos gastos renderizado via Chart.js.
+- Tabela detalhada de serviços com barras de progresso visual.
+- Alertas de FinOps destacados em cards coloridos conforme a severidade.
+- Caixa com gradiente para a interpretação em linguagem natural produzida pela IA.
+
 ## Localização
 
-`save_report` grava em `config.REPORTS_DIR` (default `reports/`), criando o diretório com `os.makedirs(..., exist_ok=True)`. Nome do arquivo: `report_<YYYYMMDD_HHMMSS>.<ext>`, com `ext` conforme o formato (`txt`/`json`/`md`). Retorna o caminho, que `main.py` imprime.
+`save_report` grava em `config.REPORTS_DIR` (default `reports/`), criando o diretório com `os.makedirs(..., exist_ok=True)`. Nome do arquivo: `report_<YYYYMMDD_HHMMSS>.<ext>`, com `ext` conforme o formato (`txt`/`json`/`md`/`html`). Retorna o caminho, que `main.py` imprime.
 
 > O `.gitignore` ignora `reports/*` (exceto `.gitkeep`), portanto relatórios gerados não são versionados.
 
