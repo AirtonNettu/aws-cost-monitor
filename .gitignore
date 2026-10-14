@@ -18,9 +18,10 @@ data/*
 
 *.zip
 
-# Material de estudo pessoal (não versionado)
+# Material de estudo pessoal e prompts internos (não versionados)
 APRENDA.md
 IMPLEMENTAR.md
+PROMPT_MASTER_SECURITY_SQUAD.md
 docs/arquitetura/
 docs/study-guide.md
 docs/study-guide.en.md
