@@ -41,13 +41,13 @@ Query sem refetch em foco ou polling; atualizar relê snapshot em cache no servi
 
 ## Critérios de aceite
 
-- [ ] Cinco áreas navegáveis, detalhe histórico e comparação lado a lado.
-- [ ] KPIs vindos do snapshot; comparação indisponível para períodos não equivalentes ou variação null.
-- [ ] Série temporal e distribuição, com tabela textual acessível e estados vazios.
-- [ ] Período/tag suportados pelo transporte; busca/serviço/ordenação apenas de apresentação, com escopo explícito.
-- [ ] Carregamento, erro recuperável, dados vazios, IA processando/sucesso/indisponível e histórico vazio.
-- [ ] Dark/light, teclado, labels, foco visível, layout sem overflow em 375px e desktop.
-- [ ] Testes de contratos, HTTP (erro/timeout/cancelamento), filtros, navegação, histórico e IA.
-- [ ] npm ci, testes, lint, TypeScript e build aprovados; 59 testes Python preservados e auditoria executada.
-- [ ] READMEs PT/EN e contratos distinguem implementado, simulado e planejado.
-- [ ] Commits por tarefa e push sem PR.
+- [x] Cinco áreas navegáveis, detalhe histórico e comparação lado a lado.
+- [x] KPIs vindos do snapshot; comparação indisponível para períodos não equivalentes ou variação null.
+- [x] Série temporal e distribuição, com tabela textual acessível e estados vazios.
+- [x] Período/tag suportados pelo transporte; busca/serviço/ordenação apenas de apresentação, com escopo explícito.
+- [x] Carregamento, erro recuperável, dados vazios, IA processando/sucesso/indisponível e histórico vazio.
+- [x] Dark/light, teclado, labels, foco visível, layout sem overflow em 375px e desktop.
+- [x] Testes de contratos, HTTP (erro/timeout/cancelamento), filtros, navegação, histórico e IA.
+- [x] npm ci, testes, lint, TypeScript e build aprovados; 59 testes Python preservados e auditoria executada.
+- [x] READMEs PT/EN e contratos distinguem implementado, simulado e planejado.
+- [x] Commits por tarefa e push sem PR.
