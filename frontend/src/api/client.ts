@@ -7,12 +7,22 @@ export function createApiClient(base: string): DataClient {
     getSnapshot: (filters, signal) => {
       const query = new URLSearchParams({ days: String(filters.days) })
       if (filters.tag) query.set('tag', filters.tag)
-      return request(base, `snapshots/latest?${query}`, snapshotSchema, { signal })
+      return request(base, `snapshots/latest?${query}`, snapshotSchema, {
+        signal,
+      })
     },
-    getHistory: signal => request(base, 'runs?limit=50', historySchema, { signal }),
-    getRun: (id, signal) => request(base, `runs/${encodeURIComponent(id)}`, snapshotSchema, { signal }),
+    getHistory: (signal) =>
+      request(base, 'runs?limit=50', historySchema, { signal }),
+    getRun: (id, signal) =>
+      request(base, `runs/${encodeURIComponent(id)}`, snapshotSchema, {
+        signal,
+      }),
     exportReport: async (id, format, signal) => {
-      const response = await fetchResponse(base, `runs/${encodeURIComponent(id)}/reports/${format}`, { signal })
+      const response = await fetchResponse(
+        base,
+        `runs/${encodeURIComponent(id)}/reports/${format}`,
+        { signal },
+      )
       return response.blob()
     },
   }

@@ -125,14 +125,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -261,14 +255,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -489,14 +477,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -717,14 +699,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -1185,14 +1161,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -1653,14 +1623,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     }
@@ -1756,14 +1720,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -1857,14 +1815,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -1958,14 +1910,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     },
@@ -2059,14 +2005,8 @@
         "reason": null
       },
       "available_filters": {
-        "days": [
-          7,
-          30,
-          90
-        ],
-        "tags": [
-          "Environment: Production"
-        ]
+        "days": [7, 30, 90],
+        "tags": ["Environment: Production"]
       },
       "report_formats": []
     }
