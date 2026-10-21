@@ -132,7 +132,11 @@ export function SnapshotPage({ kind }: { kind: keyof typeof descriptions }) {
       <PageHeading title={title} subtitle={subtitle}>
         <ExportReport snapshot={query.data} />
       </PageHeading>
-      <SnapshotContent key={query.data.id} snapshot={query.data} kind={kind} />
+      <SnapshotContent
+        key={`${query.data.id}:${kind}`}
+        snapshot={query.data}
+        kind={kind}
+      />
     </>
   )
 }

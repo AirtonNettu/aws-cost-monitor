@@ -29,6 +29,12 @@ export default function Charts({
   snapshot: Snapshot
   services?: Snapshot['services']
 }) {
+  const serviceColors = new Map(
+    snapshot.services.map((service, index) => [
+      service.name,
+      colors[index % colors.length],
+    ]),
+  )
   return (
     <div className="chart-grid">
       <section className="panel">
@@ -148,8 +154,10 @@ export default function Charts({
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>Distribuição por serviço</h2>
-            <p>Participações fornecidas pelo snapshot</p>
+            <h2>Distribuição dos serviços visíveis</h2>
+            <p>
+              Anel: custos positivos visíveis · legenda: % do total do snapshot
+            </p>
           </div>
         </div>
         {services.some((service) => service.amount > 0) ? (
@@ -174,10 +182,10 @@ export default function Charts({
                   >
                     {services
                       .filter((s) => s.amount > 0)
-                      .map((service, i) => (
+                      .map((service) => (
                         <Cell
                           key={service.name}
-                          fill={colors[i % colors.length]}
+                          fill={serviceColors.get(service.name)}
                         />
                       ))}
                   </Pie>
@@ -193,10 +201,12 @@ export default function Charts({
               </ResponsiveContainer>
             </div>
             <ul className="chart-legend">
-              {services.map((service, i) => (
+              {services.map((service) => (
                 <li key={service.name}>
                   <span>
-                    <i style={{ background: colors[i % colors.length] }} />
+                    <i
+                      style={{ background: serviceColors.get(service.name) }}
+                    />
                     {service.name}
                   </span>
                   <strong>

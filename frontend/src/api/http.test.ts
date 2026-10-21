@@ -69,3 +69,38 @@ describe('HTTP boundary', () => {
     ).rejects.toThrow('Não foi possível conectar ao backend.')
   })
 })
+
+it('cancels a request already in flight', async () => {
+  const controller = new AbortController()
+  const fetcher = vi.fn<typeof fetch>(
+    (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(new DOMException('aborted', 'AbortError')),
+        )
+      }),
+  )
+  const pending = request('/api', 'snapshots', schema, {
+    signal: controller.signal,
+    fetcher,
+  })
+  controller.abort()
+  await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+})
+it('keeps timeout active while the response body streams', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async (_url, init) =>
+      new Response(
+        new ReadableStream({
+          start(stream) {
+            init?.signal?.addEventListener('abort', () =>
+              stream.error(new DOMException('aborted', 'AbortError')),
+            )
+          },
+        }),
+      ),
+  )
+  await expect(
+    request('/api', 'snapshots', schema, { fetcher, timeout: 5 }),
+  ).rejects.toThrow('O servidor demorou')
+})

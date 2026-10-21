@@ -204,3 +204,28 @@ it('moves keyboard focus into the mobile navigation and closes it with Escape', 
   expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveFocus()
   expect(open).toHaveAttribute('aria-expanded', 'false')
 })
+
+it('resets presentation filters when returning from costs to overview', async () => {
+  const user = userEvent.setup()
+  mount('/costs')
+  const search = await screen.findByRole('searchbox', {
+    name: 'Pesquisar serviço',
+  })
+  await user.type(search, 'Amazon S3')
+  await user.selectOptions(
+    screen.getByRole('combobox', { name: 'Serviço' }),
+    'Amazon S3',
+  )
+  expect(
+    within(
+      screen.getByRole('table', { name: 'Custos por serviço' }),
+    ).queryByText('Amazon EC2'),
+  ).not.toBeInTheDocument()
+  await user.click(screen.getByRole('link', { name: 'Visão geral' }))
+  expect(
+    await screen.findByRole('heading', { name: 'Visão geral' }),
+  ).toBeInTheDocument()
+  const table = screen.getByRole('table', { name: 'Custos por serviço' })
+  expect(within(table).getAllByRole('row')).toHaveLength(7)
+  expect(within(table).getByText('Amazon EC2')).toBeInTheDocument()
+})
