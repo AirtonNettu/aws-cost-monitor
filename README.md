@@ -9,6 +9,127 @@ Ferramenta de monitoramento e análise de custos da AWS desenvolvida em Python, 
 
 ---
 
+## Dashboard React + TypeScript
+
+O frontend em `frontend/` implementa visão geral, análise de custos, alertas FinOps,
+analista IA e histórico, com tema escuro/claro e layout responsivo. **Ele inicia com
+dados simulados claramente identificados. Ainda não existe backend FastAPI.**
+O dashboard Streamlit e todos os módulos Python continuam disponíveis.
+
+**React apresenta. FastAPI orquestra (planejado). Python calcula. Ollama interpreta.**
+
+```mermaid
+flowchart LR
+    React["React + TypeScript · implementado"] --> Mock["Snapshots simulados · padrão atual"]
+    React -. "contrato proposto" .-> API["FastAPI · planejado"]
+    API -.-> Python["Análise Python + regras FinOps · existentes"]
+    Python --> SQLite[("SQLite · existente")]
+    Python --> AWS["Boto3 + Cost Explorer · existente"]
+    Python -. "opcional" .-> Ollama["Ollama via Python · cliente existente"]
+```
+
+### Executar o frontend
+
+Requer Node.js **22.12+** (validado com 24.19.0) e npm. Não exige AWS, Python ou
+Ollama para navegar no modo mock.
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Abra o endereço informado pelo Vite no seu ambiente local (porta padrão 5173).
+Para validar a distribuição de produção: `npm run build` e `npm run preview`
+(porta padrão 4173). Em hospedagem futura, as rotas da SPA precisam de fallback
+para `index.html`; nenhum deploy foi feito nesta etapa.
+
+### Funcionalidades e limites
+
+- KPIs em USD, estimativas e data da coleta; totais, percentuais e alertas vêm do
+  snapshot. A variação só aparece quando o backend indica períodos equivalentes.
+- Evolução temporal, distribuição por serviço, ranking, busca e ordenação. Tabela
+  diária expandível fornece alternativa textual aos gráficos.
+- Período (7/30/90 dias) e tag buscam snapshots completos. Serviço e pesquisa
+  restringem tabela/distribuição; não recalculam KPIs, evolução ou alertas.
+- Alertas por severidade, crescimento acima do limiar, concentração e ranking.
+  Detecção estatística de anomalias continua no roadmap.
+- IA com resumo, seções opcionais e estados de processamento/indisponibilidade.
+  Todo texto inicial é ilustrativo; **o navegador não chama Ollama**.
+- Histórico, detalhe e comparação de duas execuções lado a lado. Não calcula
+  variação entre execuções que podem ter períodos sobrepostos.
+- Skeletons, erro com nova tentativa, estados vazios, teclado, menu móvel e tema
+  persistido. Sem polling ou atualização ao focar a janela.
+- Exportação desabilitada nos mocks. Será habilitada somente quando o backend
+  anunciar formatos e disponibilizar o endpoint de download.
+
+### Stack e diretórios do frontend
+
+React, TypeScript strict, Vite, Tailwind CSS, React Router, TanStack Query,
+Recharts, Lucide React, Vitest e React Testing Library. Zod valida contratos
+HTTP em runtime; dependências e versões estão travadas em `package-lock.json`.
+
+```text
+frontend/
+├── src/api/          # contratos, validação e cliente HTTP com timeout/abort
+├── src/app/          # rotas, layout, tema, contexto e consultas
+├── src/components/   # KPIs, gráficos, tabelas e estados reutilizáveis
+├── src/features/     # overview, alerts, ai e history (custos usa SnapshotPage)
+├── src/mocks/        # adaptador isolado e fixtures sintéticas pré-calculadas
+├── src/lib/          # formatação de datas e moeda
+├── src/test/         # setup de testes DOM
+├── src/styles.css    # Tailwind e tokens dos temas responsivos
+└── package-lock.json
+```
+
+### Variáveis públicas do Vite
+
+O frontend funciona sem arquivo de configuração. Para personalizar, crie
+`frontend/.env.local` (ignorado) e reinicie o Vite. **Nunca coloque segredos em
+variáveis VITE_*: elas são públicas e incorporadas no build.**
+
+| Variável | Default | Finalidade |
+| --- | --- | --- |
+| `VITE_DATA_MODE` | `mock` | `mock` ou `api`; erros em API nunca viram mocks silenciosamente |
+| `VITE_API_BASE_URL` | `/api/v1` | Base do futuro FastAPI; só usada em modo `api` |
+| `VITE_MOCK_SCENARIO` | `success` | `success`, `empty`, `error`, `loading`, `ai-unavailable`, `ai-processing` |
+
+Exemplo local: `VITE_MOCK_SCENARIO=empty npm run dev`. O cenário `loading`
+aguarda oito segundos; não representa uma coleta real. As fixtures usam dados
+financeiros fictícios, pré-calculados pelos módulos Python existentes. O modo
+mock não faz chamadas HTTP de aplicação nem persiste dados no SQLite.
+
+### Contratos futuros, testes e próximos passos
+
+Os endpoints **propostos**, ainda não implementados, são `GET /snapshots/latest`,
+`GET /runs`, `GET /runs/{id}` e `GET /runs/{id}/reports/{format}`, sob a base
+`/api/v1`. Detalhes de payloads, filtros, datas, créditos, erros e adaptação Python:
+[docs/frontend/api-contract.md](docs/frontend/api-contract.md).
+
+```bash
+cd frontend
+npm test
+npm run test:coverage
+npm run lint
+npm run build
+# Na raiz, validar o Python preservado:
+uv run pytest -q
+uv run python scripts/security_audit.py
+```
+
+O cliente Ollama existente em Python retorna texto livre. Seções estruturadas,
+metadados de modelo e processamento por API ainda exigem trabalho no backend;
+a UI trata campos ausentes sem inventar recomendações. Próximos trabalhos:
+FastAPI de leitura de snapshots cacheados, autenticação/autorização, CORS,
+metadados de filtros, persistência de série diária, downloads e evolução da IA.
+Não conectar o frontend diretamente à AWS nem duplicar regras FinOps em TS.
+
+Auditoria e critérios: [design](docs/frontend/design.md). Plano:
+[implementation-plan](docs/frontend/implementation-plan.md). Validação e entrega:
+[validation](docs/frontend/validation.md).
+
+---
+
 ## Sobre o projeto
 
 O AWS Cost Monitor é um projeto de portfólio de **Cloud / FinOps / Python**. A ideia central é separar claramente duas responsabilidades:
@@ -98,7 +219,7 @@ A orquestração do fluxo fica em `src/main.py`, e os parâmetros (região, jane
 - **[Chart.js](https://www.chartjs.org/)** — gráficos interativos no relatório HTML exportável
 - **[requests](https://requests.readthedocs.io/)** — chamada HTTP ao servidor Llama
 - **[python-dotenv](https://pypi.org/project/python-dotenv/)** — leitura de configuração via arquivo `.env` (opcional em runtime Serverless)
-- **[pytest](https://docs.pytest.org/)** — testes unitários e de integração com mocks (55 testes)
+- **[pytest](https://docs.pytest.org/)** — testes unitários e de integração com mocks (59 testes)
 - **AWS Cost Explorer** / **AWS STS** — consulta de custos e verificação de identidade
 - **AWS Lambda** / **Amazon EventBridge** / **Amazon S3** — arquitetura serverless 24/7 de custo zero (Free Tier)
 - **Llama local** (ex.: [Ollama](https://ollama.com/)) — modelo de interpretação desacoplado
@@ -126,7 +247,7 @@ aws-cost-monitor/
 │   │   └── app.py              # interface web interativa Streamlit
 │   └── reports/
 │       └── report_generator.py # geração de relatórios (txt/json/md/html)
-├── tests/                      # suíte completa com pytest + mocks (55 testes)
+├── tests/                      # suíte completa com pytest + mocks (59 testes)
 │   ├── conftest.py
 │   ├── test_cli.py
 │   ├── test_cost_analyzer.py
@@ -446,7 +567,7 @@ uv run pytest -v
 - [x] Persistência histórica das faturas e análises em SQLite local (`data/costs.db`).
 - [x] CLI com argumentos completos (`--days`, `--granularity`, `--format`, `--tag`, `--no-ai`, `--no-db`, `--dashboard`).
 - [x] Arquitetura Serverless 100% Free Tier (AWS Lambda + Amazon EventBridge cron diário + publicação no Amazon S3 Website).
-- [x] Suíte completa de testes automatizados com mocks (55 testes, 100% passando).
+- [x] Suíte completa de testes automatizados com mocks (59 testes, 100% passando).
 - [x] Configuração centralizada em `src/config.py` e tratamento de erros em todas as etapas.
 
 ### Em desenvolvimento / planejado (v0.3.0)

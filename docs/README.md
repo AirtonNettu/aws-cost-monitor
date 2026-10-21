@@ -20,3 +20,12 @@ Documentação derivada do código real do repositório. Descreve como o sistema
 ## Regra arquitetural
 
 **Python calcula. IA interpreta.** Os valores financeiros são produzidos exclusivamente por `src/analysis/cost_analyzer.py`. A camada de IA (`src/ai/llama_client.py`) apenas interpreta os números já calculados.
+
+## Frontend React e integração futura
+
+- [frontend/design.md](frontend/design.md) — auditoria inicial, decisões e critérios de aceite.
+- [frontend/implementation-plan.md](frontend/implementation-plan.md) — plano da entrega frontend.
+- [frontend/api-contract.md](frontend/api-contract.md) — contratos propostos para o FastAPI ainda não implementado.
+- [frontend/validation.md](frontend/validation.md) — validação, comandos e limites da entrega.
+
+O React funciona com mocks explícitos. Os documentos V1 acima preservam o histórico do Python; para a nova SPA e seu estado atual, consulte os documentos frontend.
