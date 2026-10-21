@@ -1,0 +1,2074 @@
+{
+  "snapshots": {
+    "7:": {
+      "id": "demo-7-all-0",
+      "source": "mock",
+      "collected_at": "2026-10-20T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-10-13",
+        "end": "2026-10-20"
+      },
+      "estimated": true,
+      "tag": null,
+      "summary": {
+        "total_cost": 2859.5,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36842105263158,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 2269.44,
+        "current_total": 2859.5,
+        "variation": 26.00024675690919,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-10-06",
+          "end": "2026-10-13"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 1640.45,
+          "percentage": 57.36842105263158
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 586.95,
+          "percentage": 20.52631578947369
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 270.9,
+          "percentage": 9.473684210526315
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 180.6,
+          "percentage": 6.315789473684211
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 120.4,
+          "percentage": 4.2105263157894735
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 60.2,
+          "percentage": 2.1052631578947367
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-10-13",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-10-14",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-10-15",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-10-16",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-10-17",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-10-18",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-10-19",
+          "amount": 437.0
+        }
+      ],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (1640.45 USD), Amazon RDS (586.95 USD), Amazon S3 (270.90 USD), Amazon CloudFront (180.60 USD), AWS Lambda (120.40 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": "llama3 · demonstração",
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [
+          "Amazon EC2 é o serviço com maior participação neste cenário ilustrativo."
+        ],
+        "recommendations": [
+          "Verifique o dimensionamento das instâncias com a equipe responsável."
+        ],
+        "potential_waste": [
+          "Investigue recursos ociosos; os dados de custo, isoladamente, não confirmam desperdício."
+        ],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    "7:Environment: Production": {
+      "id": "demo-7-Environment: Production-0",
+      "source": "mock",
+      "collected_at": "2026-10-20T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-10-13",
+        "end": "2026-10-20"
+      },
+      "estimated": true,
+      "tag": "Environment: Production",
+      "summary": {
+        "total_cost": 2001.62,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36853148949351,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 1588.59,
+        "current_total": 2001.62,
+        "variation": 25.999785973725125,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-10-06",
+          "end": "2026-10-13"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 1148.3,
+          "percentage": 57.36853148949351
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 410.85,
+          "percentage": 20.52587404202596
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 189.63,
+          "percentage": 9.47382620077737
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 126.42,
+          "percentage": 6.315884133851581
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 84.28,
+          "percentage": 4.21058942256772
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 42.14,
+          "percentage": 2.10529471128386
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-10-13",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-10-14",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-10-15",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-10-16",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-10-17",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-10-18",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-10-19",
+          "amount": 305.9
+        }
+      ],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (1148.30 USD), Amazon RDS (410.85 USD), Amazon S3 (189.63 USD), Amazon CloudFront (126.42 USD), AWS Lambda (84.28 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": "llama3 · demonstração",
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [
+          "Amazon EC2 é o serviço com maior participação neste cenário ilustrativo."
+        ],
+        "recommendations": [
+          "Verifique o dimensionamento das instâncias com a equipe responsável."
+        ],
+        "potential_waste": [
+          "Investigue recursos ociosos; os dados de custo, isoladamente, não confirmam desperdício."
+        ],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    "30:": {
+      "id": "demo-30-all-0",
+      "source": "mock",
+      "collected_at": "2026-10-20T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-09-20",
+        "end": "2026-10-20"
+      },
+      "estimated": true,
+      "tag": null,
+      "summary": {
+        "total_cost": 12207.5,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36842105263158,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 9688.49,
+        "current_total": 12207.5,
+        "variation": 26.000026835967216,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-08-21",
+          "end": "2026-09-20"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 7003.25,
+          "percentage": 57.36842105263158
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 2505.75,
+          "percentage": 20.526315789473685
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 1156.5,
+          "percentage": 9.473684210526317
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 771.0,
+          "percentage": 6.315789473684212
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 514.0,
+          "percentage": 4.2105263157894735
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 257.0,
+          "percentage": 2.1052631578947367
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-09-20",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-09-21",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-09-22",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-09-23",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-09-24",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-09-25",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-09-26",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-09-27",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-09-28",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-09-29",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-09-30",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-10-01",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-10-02",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-10-03",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-10-04",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-10-05",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-10-06",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-10-07",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-10-08",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-10-09",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-10-10",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-10-11",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-10-12",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-10-13",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-10-14",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-10-15",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-10-16",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-10-17",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-10-18",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-10-19",
+          "amount": 389.5
+        }
+      ],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (7003.25 USD), Amazon RDS (2505.75 USD), Amazon S3 (1156.50 USD), Amazon CloudFront (771.00 USD), AWS Lambda (514.00 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": "llama3 · demonstração",
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [
+          "Amazon EC2 é o serviço com maior participação neste cenário ilustrativo."
+        ],
+        "recommendations": [
+          "Verifique o dimensionamento das instâncias com a equipe responsável."
+        ],
+        "potential_waste": [
+          "Investigue recursos ociosos; os dados de custo, isoladamente, não confirmam desperdício."
+        ],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    "30:Environment: Production": {
+      "id": "demo-30-Environment: Production-0",
+      "source": "mock",
+      "collected_at": "2026-10-20T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-09-20",
+        "end": "2026-10-20"
+      },
+      "estimated": true,
+      "tag": "Environment: Production",
+      "summary": {
+        "total_cost": 8545.12,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36853315108505,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 6781.84,
+        "current_total": 8545.12,
+        "variation": 26.000023592417403,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-08-21",
+          "end": "2026-09-20"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 4902.21,
+          "percentage": 57.36853315108505
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 1753.96,
+          "percentage": 20.52586739565974
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 809.55,
+          "percentage": 9.47382833710937
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 539.7,
+          "percentage": 6.31588555807291
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 359.8,
+          "percentage": 4.210590372048607
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 179.9,
+          "percentage": 2.1052951860243034
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-09-20",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-09-21",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-09-22",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-09-23",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-09-24",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-09-25",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-09-26",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-09-27",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-09-28",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-09-29",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-09-30",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-10-01",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-10-02",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-10-03",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-10-04",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-10-05",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-10-06",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-10-07",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-10-08",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-10-09",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-10-10",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-10-11",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-10-12",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-10-13",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-10-14",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-10-15",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-10-16",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-10-17",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-10-18",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-10-19",
+          "amount": 272.64
+        }
+      ],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (4902.21 USD), Amazon RDS (1753.96 USD), Amazon S3 (809.55 USD), Amazon CloudFront (539.70 USD), AWS Lambda (359.80 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": "llama3 · demonstração",
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [
+          "Amazon EC2 é o serviço com maior participação neste cenário ilustrativo."
+        ],
+        "recommendations": [
+          "Verifique o dimensionamento das instâncias com a equipe responsável."
+        ],
+        "potential_waste": [
+          "Investigue recursos ociosos; os dados de custo, isoladamente, não confirmam desperdício."
+        ],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    "90:": {
+      "id": "demo-90-all-0",
+      "source": "mock",
+      "collected_at": "2026-10-20T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-07-22",
+        "end": "2026-10-20"
+      },
+      "estimated": true,
+      "tag": null,
+      "summary": {
+        "total_cost": 36736.5,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36842105263158,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 29155.95,
+        "current_total": 36736.50000000001,
+        "variation": 26.000010289494963,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-04-23",
+          "end": "2026-07-22"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 21075.15,
+          "percentage": 57.36842105263158
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 7540.65,
+          "percentage": 20.526315789473674
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 3480.3,
+          "percentage": 9.473684210526317
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 2320.2,
+          "percentage": 6.31578947368421
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 1546.8,
+          "percentage": 4.2105263157894735
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 773.4,
+          "percentage": 2.1052631578947367
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-07-22",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-07-23",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-07-24",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-07-25",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-07-26",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-07-27",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-07-28",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-07-29",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-07-30",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-07-31",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-08-01",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-08-02",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-08-03",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-08-04",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-08-05",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-08-06",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-08-07",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-08-08",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-08-09",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-08-10",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-08-11",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-08-12",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-08-13",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-08-14",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-08-15",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-08-16",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-08-17",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-08-18",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-08-19",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-08-20",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-08-21",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-08-22",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-08-23",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-08-24",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-08-25",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-08-26",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-08-27",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-08-28",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-08-29",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-08-30",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-08-31",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-09-01",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-09-02",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-09-03",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-09-04",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-09-05",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-09-06",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-09-07",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-09-08",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-09-09",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-09-10",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-09-11",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-09-12",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-09-13",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-09-14",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-09-15",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-09-16",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-09-17",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-09-18",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-09-19",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-09-20",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-09-21",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-09-22",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-09-23",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-09-24",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-09-25",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-09-26",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-09-27",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-09-28",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-09-29",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-09-30",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-10-01",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-10-02",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-10-03",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-10-04",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-10-05",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-10-06",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-10-07",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-10-08",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-10-09",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-10-10",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-10-11",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-10-12",
+          "amount": 427.5
+        },
+        {
+          "date": "2026-10-13",
+          "amount": 437.0
+        },
+        {
+          "date": "2026-10-14",
+          "amount": 380.0
+        },
+        {
+          "date": "2026-10-15",
+          "amount": 389.5
+        },
+        {
+          "date": "2026-10-16",
+          "amount": 399.0
+        },
+        {
+          "date": "2026-10-17",
+          "amount": 408.5
+        },
+        {
+          "date": "2026-10-18",
+          "amount": 418.0
+        },
+        {
+          "date": "2026-10-19",
+          "amount": 427.5
+        }
+      ],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (21075.15 USD), Amazon RDS (7540.65 USD), Amazon S3 (3480.30 USD), Amazon CloudFront (2320.20 USD), AWS Lambda (1546.80 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": "llama3 · demonstração",
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [
+          "Amazon EC2 é o serviço com maior participação neste cenário ilustrativo."
+        ],
+        "recommendations": [
+          "Verifique o dimensionamento das instâncias com a equipe responsável."
+        ],
+        "potential_waste": [
+          "Investigue recursos ociosos; os dados de custo, isoladamente, não confirmam desperdício."
+        ],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    "90:Environment: Production": {
+      "id": "demo-90-Environment: Production-0",
+      "source": "mock",
+      "collected_at": "2026-10-20T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-07-22",
+        "end": "2026-10-20"
+      },
+      "estimated": true,
+      "tag": "Environment: Production",
+      "summary": {
+        "total_cost": 25715.16,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36853280321803,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 20408.86,
+        "current_total": 25715.160000000007,
+        "variation": 25.999982360602242,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-04-23",
+          "end": "2026-07-22"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 14752.41,
+          "percentage": 57.36853280321803
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 5278.26,
+          "percentage": 20.5258687871279
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 2436.21,
+          "percentage": 9.473827889851739
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 1624.14,
+          "percentage": 6.3158852599011635
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 1082.76,
+          "percentage": 4.210590173267442
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 541.38,
+          "percentage": 2.105295086633721
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-07-22",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-07-23",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-07-24",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-07-25",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-07-26",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-07-27",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-07-28",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-07-29",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-07-30",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-07-31",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-08-01",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-08-02",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-08-03",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-08-04",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-08-05",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-08-06",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-08-07",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-08-08",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-08-09",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-08-10",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-08-11",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-08-12",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-08-13",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-08-14",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-08-15",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-08-16",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-08-17",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-08-18",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-08-19",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-08-20",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-08-21",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-08-22",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-08-23",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-08-24",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-08-25",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-08-26",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-08-27",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-08-28",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-08-29",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-08-30",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-08-31",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-09-01",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-09-02",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-09-03",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-09-04",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-09-05",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-09-06",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-09-07",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-09-08",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-09-09",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-09-10",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-09-11",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-09-12",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-09-13",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-09-14",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-09-15",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-09-16",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-09-17",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-09-18",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-09-19",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-09-20",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-09-21",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-09-22",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-09-23",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-09-24",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-09-25",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-09-26",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-09-27",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-09-28",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-09-29",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-09-30",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-10-01",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-10-02",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-10-03",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-10-04",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-10-05",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-10-06",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-10-07",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-10-08",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-10-09",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-10-10",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-10-11",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-10-12",
+          "amount": 299.24
+        },
+        {
+          "date": "2026-10-13",
+          "amount": 305.9
+        },
+        {
+          "date": "2026-10-14",
+          "amount": 266.0
+        },
+        {
+          "date": "2026-10-15",
+          "amount": 272.64
+        },
+        {
+          "date": "2026-10-16",
+          "amount": 279.3
+        },
+        {
+          "date": "2026-10-17",
+          "amount": 285.94
+        },
+        {
+          "date": "2026-10-18",
+          "amount": 292.6
+        },
+        {
+          "date": "2026-10-19",
+          "amount": 299.24
+        }
+      ],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (14752.41 USD), Amazon RDS (5278.26 USD), Amazon S3 (2436.21 USD), Amazon CloudFront (1624.14 USD), AWS Lambda (1082.76 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": "llama3 · demonstração",
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [
+          "Amazon EC2 é o serviço com maior participação neste cenário ilustrativo."
+        ],
+        "recommendations": [
+          "Verifique o dimensionamento das instâncias com a equipe responsável."
+        ],
+        "potential_waste": [
+          "Investigue recursos ociosos; os dados de custo, isoladamente, não confirmam desperdício."
+        ],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    }
+  },
+  "runs": [
+    {
+      "id": "demo-30-all-0",
+      "source": "mock",
+      "collected_at": "2026-10-20T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-09-20",
+        "end": "2026-10-20"
+      },
+      "estimated": true,
+      "tag": null,
+      "summary": {
+        "total_cost": 12207.5,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36842105263158,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 9688.49,
+        "current_total": 12207.5,
+        "variation": 26.000026835967216,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-08-21",
+          "end": "2026-09-20"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 7003.25,
+          "percentage": 57.36842105263158
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 2505.75,
+          "percentage": 20.526315789473685
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 1156.5,
+          "percentage": 9.473684210526317
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 771.0,
+          "percentage": 6.315789473684212
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 514.0,
+          "percentage": 4.2105263157894735
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 257.0,
+          "percentage": 2.1052631578947367
+        }
+      ],
+      "timeline": [],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (7003.25 USD), Amazon RDS (2505.75 USD), Amazon S3 (1156.50 USD), Amazon CloudFront (771.00 USD), AWS Lambda (514.00 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": null,
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [],
+        "recommendations": [],
+        "potential_waste": [],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    {
+      "id": "demo-30-all-7",
+      "source": "mock",
+      "collected_at": "2026-10-13T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-09-13",
+        "end": "2026-10-13"
+      },
+      "estimated": true,
+      "tag": null,
+      "summary": {
+        "total_cost": 12036.62,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.368513752199526,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 9552.87,
+        "current_total": 12036.619999999997,
+        "variation": 26.000039778621463,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-08-14",
+          "end": "2026-09-13"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 6905.23,
+          "percentage": 57.368513752199526
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 2470.66,
+          "percentage": 20.526194230606272
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 1140.32,
+          "percentage": 9.47375592151285
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 760.2,
+          "percentage": 6.31572650793994
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 506.79,
+          "percentage": 4.210401258825152
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 253.42,
+          "percentage": 2.1054083289162575
+        }
+      ],
+      "timeline": [],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (6905.23 USD), Amazon RDS (2470.66 USD), Amazon S3 (1140.32 USD), Amazon CloudFront (760.20 USD), AWS Lambda (506.79 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": null,
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [],
+        "recommendations": [],
+        "potential_waste": [],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    {
+      "id": "demo-30-all-14",
+      "source": "mock",
+      "collected_at": "2026-10-06T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-09-06",
+        "end": "2026-10-06"
+      },
+      "estimated": true,
+      "tag": null,
+      "summary": {
+        "total_cost": 11865.72,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36836871256021,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 9417.24,
+        "current_total": 11865.72,
+        "variation": 25.999974514825997,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-08-07",
+          "end": "2026-09-06"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 6807.17,
+          "percentage": 57.36836871256021
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 2435.61,
+          "percentage": 20.526440873373048
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 1124.14,
+          "percentage": 9.473845666339674
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 749.4,
+          "percentage": 6.315672373863535
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 499.61,
+          "percentage": 4.210532525628449
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 249.79,
+          "percentage": 2.105139848235084
+        }
+      ],
+      "timeline": [],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (6807.17 USD), Amazon RDS (2435.61 USD), Amazon S3 (1124.14 USD), Amazon CloudFront (749.40 USD), AWS Lambda (499.61 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": null,
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [],
+        "recommendations": [],
+        "potential_waste": [],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    },
+    {
+      "id": "demo-30-all-21",
+      "source": "mock",
+      "collected_at": "2026-09-29T12:00:00Z",
+      "currency": "USD",
+      "period": {
+        "start": "2026-08-30",
+        "end": "2026-09-29"
+      },
+      "estimated": true,
+      "tag": null,
+      "summary": {
+        "total_cost": 11694.78,
+        "largest_service": "Amazon EC2",
+        "largest_service_percentage": 57.36875768505264,
+        "alert_count": 3
+      },
+      "comparison": {
+        "previous_total": 9281.57,
+        "current_total": 11694.779999999999,
+        "variation": 26.00001939327074,
+        "equivalent_periods": true,
+        "previous_period": {
+          "start": "2026-07-31",
+          "end": "2026-08-30"
+        }
+      },
+      "services": [
+        {
+          "name": "Amazon EC2",
+          "amount": 6709.15,
+          "percentage": 57.36875768505264
+        },
+        {
+          "name": "Amazon RDS",
+          "amount": 2400.47,
+          "percentage": 20.525995358612988
+        },
+        {
+          "name": "Amazon S3",
+          "amount": 1107.92,
+          "percentage": 9.473628405151702
+        },
+        {
+          "name": "Amazon CloudFront",
+          "amount": 738.64,
+          "percentage": 6.315980292061931
+        },
+        {
+          "name": "AWS Lambda",
+          "amount": 492.4,
+          "percentage": 4.210425506080491
+        },
+        {
+          "name": "Outros serviços",
+          "amount": 246.2,
+          "percentage": 2.1052127530402465
+        }
+      ],
+      "timeline": [],
+      "alerts": [
+        {
+          "id": "alert-0",
+          "type": "growth",
+          "severity": "warning",
+          "message": "Custo total cresceu 26.0% em relação ao período anterior (limiar: 20.0%)."
+        },
+        {
+          "id": "alert-1",
+          "type": "concentration",
+          "severity": "warning",
+          "message": "O serviço 'Amazon EC2' concentra 57.4% do custo total (limiar: 50.0%)."
+        },
+        {
+          "id": "alert-2",
+          "type": "top_services",
+          "severity": "info",
+          "message": "Top 5 serviços por custo: Amazon EC2 (6709.15 USD), Amazon RDS (2400.47 USD), Amazon S3 (1107.92 USD), Amazon CloudFront (738.64 USD), AWS Lambda (492.40 USD)."
+        }
+      ],
+      "ai": {
+        "status": "ready",
+        "model": null,
+        "text": "Exemplo simulado de resumo executivo: a concentração em computação merece revisão. Avalie a utilização dos recursos antes de qualquer alteração. Este texto não foi gerado por um modelo nesta sessão.",
+        "observations": [],
+        "recommendations": [],
+        "potential_waste": [],
+        "reason": null
+      },
+      "available_filters": {
+        "days": [
+          7,
+          30,
+          90
+        ],
+        "tags": [
+          "Environment: Production"
+        ]
+      },
+      "report_formats": []
+    }
+  ]
+}
