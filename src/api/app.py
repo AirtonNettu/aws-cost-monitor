@@ -3,13 +3,23 @@
 from __future__ import annotations
 
 import json
+import logging
+import math
 from datetime import datetime
 from enum import IntEnum
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    functional_validators,
+    model_validator,
+)
 
 from src.database.repository import (
     get_available_tags,
@@ -20,6 +30,27 @@ from src.database.repository import (
 )
 from src.reports.report_generator import build_report_for_format
 
+logger = logging.getLogger("aws_cost_monitor.api")
+
+
+def check_finite(v: float) -> float:
+    """Valida estritamente se o número financeiro é finito.
+
+    Rejeita NaN, Infinity e -Infinity. Preserva valores negativos legítimos (ex: créditos AWS).
+    """
+    if not isinstance(v, (int, float)) or not math.isfinite(v):
+        raise ValueError(
+            "Valor financeiro deve ser um número finito (valores NaN, Infinity e -Infinity são proibidos)."
+        )
+    return float(v)
+
+
+FiniteFloat = Annotated[
+    float,
+    Field(allow_inf_nan=False),
+    functional_validators.AfterValidator(check_finite),
+]
+
 
 class SnapshotDays(IntEnum):
     DAYS_7 = 7
@@ -28,7 +59,7 @@ class SnapshotDays(IntEnum):
 
 
 class Period(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     start: str
     end: str
 
@@ -49,33 +80,33 @@ class Period(BaseModel):
 
 
 class Summary(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    total_cost: float
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    total_cost: FiniteFloat
     largest_service: str | None
-    largest_service_percentage: float | None
+    largest_service_percentage: FiniteFloat | None
     alert_count: int = Field(ge=0)
 
 
 class Comparison(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    previous_total: float
-    current_total: float
-    variation: float | None
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    previous_total: FiniteFloat
+    current_total: FiniteFloat
+    variation: FiniteFloat | None
     equivalent_periods: bool
     previous_period: Period
 
 
 class ServiceCost(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     name: str
-    amount: float
-    percentage: float
+    amount: FiniteFloat
+    percentage: FiniteFloat
 
 
 class TimelinePoint(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     date: str
-    amount: float
+    amount: FiniteFloat
 
     @field_validator("date")
     @classmethod
@@ -88,7 +119,7 @@ class TimelinePoint(BaseModel):
 
 
 class Alert(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     id: str
     type: Literal["growth", "concentration", "top_services", "untagged"]
     severity: Literal["info", "warning", "critical"]
@@ -96,7 +127,7 @@ class Alert(BaseModel):
 
 
 class AIState(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     status: Literal["ready", "processing", "unavailable"]
     text: str | None
     model: str | None
@@ -107,7 +138,7 @@ class AIState(BaseModel):
 
 
 class AvailableFilters(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     days: list[SnapshotDays] = Field(
         default_factory=lambda: [SnapshotDays.DAYS_7, SnapshotDays.DAYS_30, SnapshotDays.DAYS_90]
     )
@@ -118,7 +149,7 @@ ReportFormatType = Literal["json", "csv", "html", "markdown", "txt"]
 
 
 class Snapshot(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     id: str
     source: Literal["aws", "mock"]
     collected_at: datetime
@@ -137,17 +168,17 @@ class Snapshot(BaseModel):
 
 
 class RunSummary(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     id: str
     collected_at: datetime
     period: Period
     estimated: bool
-    total_cost: float
+    total_cost: FiniteFloat
     largest_service: str | None
 
 
 class HistoryResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     runs: list[RunSummary]
 
 
@@ -362,27 +393,58 @@ def list_runs(
 ):
     clean_tag = tag.strip() if tag and tag.strip() else None
     days_val = int(days) if days is not None else None
-    runs = get_history(limit=limit, offset=offset, days=days_val, tag=clean_tag)
+
+    logger.info(
+        "Listagem de execuções solicitada",
+        extra={
+            "limit": limit,
+            "offset": offset,
+            "days": days_val,
+            "has_tag": clean_tag is not None,
+        },
+    )
+
+    runs = get_history(
+        limit=limit,
+        offset=offset,
+        days=days_val,
+        tag=clean_tag,
+        only_compatible=True,
+        order_desc=True,
+    )
+
     result = []
-    for row in reversed(runs):
-        if not row["period_start"] or not row["period_end"]:
-            continue
+    for row in runs:
         try:
-            collected = datetime.fromisoformat(row["created_at"])
+            raw_created = row["created_at"]
+            collected = datetime.fromisoformat(raw_created)
             if collected.tzinfo is None:
-                continue  # Legado sem fuso horário; não seguro para contrato Zod
-            result.append(
-                RunSummary(
-                    id=str(row["id"]),
-                    collected_at=collected,
-                    period=Period(start=row["period_start"], end=row["period_end"]),
-                    estimated=bool(row.get("estimated", 0)),
-                    total_cost=float(row["total_cost"]),
-                    largest_service=row.get("largest_service"),
+                # Tratamento explícito com log estruturado de registros legados
+                logger.warning(
+                    "Registro legado com data ingênua ignorado no histórico da API",
+                    extra={"run_id": row["id"]},
                 )
+                continue
+
+            summary = RunSummary(
+                id=str(row["id"]),
+                collected_at=collected,
+                period=Period(start=row["period_start"], end=row["period_end"]),
+                estimated=bool(row.get("estimated", 0)),
+                total_cost=float(row["total_cost"]),
+                largest_service=row.get("largest_service"),
             )
-        except Exception:
-            continue
+            result.append(summary)
+        except (ValueError, TypeError, ValidationError) as err:
+            logger.error(
+                "Falha na validação de integridade do registro histórico",
+                extra={"run_id": row.get("id"), "erro": str(err)},
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="Erro interno de integridade de dados ao listar execuções.",
+            ) from err
+
     return HistoryResponse(runs=result)
 
 
@@ -392,9 +454,34 @@ def get_run(run_id: str):
         numeric_id = int(run_id)
     except ValueError:
         raise HTTPException(status_code=404, detail="Snapshot nao encontrado.")
+
     row = get_run_by_id(numeric_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Snapshot nao encontrado.")
+
+    try:
+        collected = datetime.fromisoformat(row["created_at"])
+        if collected.tzinfo is None:
+            logger.warning(
+                "Consulta individual de snapshot legado sem fuso horário",
+                extra={"run_id": numeric_id},
+            )
+            raise HTTPException(
+                status_code=409,
+                detail="Snapshot legado sem fuso horario; migracao necessaria.",
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(
+            "Erro ao interpretar data de criação do snapshot",
+            extra={"run_id": numeric_id, "erro": str(exc)},
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao processar dados do snapshot.",
+        ) from exc
+
     return _snapshot(row)
 
 

@@ -83,4 +83,71 @@ describe('Contratos da API — Validação Zod', () => {
     const parsed = snapshotSchema.safeParse(valid)
     expect(parsed.success).toBe(true)
   })
+
+  it('rejeita estritamente NaN e Infinity em valores financeiros', () => {
+    const base = fixtures.runs[0]
+    expect(base).toBeDefined()
+    if (!base) return
+
+    // 1. Rejeita NaN em total_cost
+    const nanCost = structuredClone(base)
+    nanCost.summary.total_cost = Number.NaN
+    expect(snapshotSchema.safeParse(nanCost).success).toBe(false)
+
+    // 2. Rejeita Infinity em total_cost
+    const infCost = structuredClone(base)
+    infCost.summary.total_cost = Number.POSITIVE_INFINITY
+    expect(snapshotSchema.safeParse(infCost).success).toBe(false)
+
+    // 3. Rejeita -Infinity em total_cost
+    const negInfCost = structuredClone(base)
+    negInfCost.summary.total_cost = Number.NEGATIVE_INFINITY
+    expect(snapshotSchema.safeParse(negInfCost).success).toBe(false)
+
+    // 4. Rejeita NaN no detalhamento de serviço
+    const nanService = structuredClone(base)
+    if (nanService.services[0]) {
+      nanService.services[0].amount = Number.NaN
+      expect(snapshotSchema.safeParse(nanService).success).toBe(false)
+    }
+  })
+
+  it('preserva valores negativos legítimos (créditos e estornos da AWS)', () => {
+    const base = fixtures.runs[0]
+    expect(base).toBeDefined()
+    if (!base) return
+
+    const creditSnapshot = structuredClone(base)
+    creditSnapshot.summary.total_cost = -150.75
+    creditSnapshot.services.push({
+      name: 'AWS Credits & Discounts',
+      amount: -200.0,
+      percentage: -15.5,
+    })
+
+    const parsed = snapshotSchema.safeParse(creditSnapshot)
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.summary.total_cost).toBe(-150.75)
+      const creditService = parsed.data.services.find(
+        (s) => s.name === 'AWS Credits & Discounts',
+      )
+      expect(creditService?.amount).toBe(-200.0)
+    }
+  })
+
+  it('rejeita previous_period com intervalo inválido (start >= end) na comparação', () => {
+    const base = fixtures.runs[0]
+    expect(base).toBeDefined()
+    if (!base) return
+
+    const invalidComp = structuredClone(base)
+    if (invalidComp.comparison) {
+      invalidComp.comparison.previous_period = {
+        start: '2026-10-15',
+        end: '2026-10-10', // start > end
+      }
+      expect(snapshotSchema.safeParse(invalidComp).success).toBe(false)
+    }
+  })
 })
