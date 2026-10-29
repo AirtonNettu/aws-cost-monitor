@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-quality:
+    name: Backend — Python & Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.14
+
+      - name: Install locked dependencies
+        run: uv sync --locked --group dev
+
+      - name: Compile Python sources
+        run: uv run python -m compileall -q src tests scripts
+
+      - name: Run tests without AWS credentials
+        run: uv run pytest -q
+
+      - name: Run repository security audit
+        run: uv run python scripts/security_audit.py
+
+  frontend-quality:
+    name: Frontend — React, Vitest & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm --prefix frontend ci
+
+      - name: Run linter
+        run: npm --prefix frontend run lint
+
+      - name: Run unit & contract tests
+        run: npm --prefix frontend test
+
+      - name: TypeScript type-check and build
+        run: npm --prefix frontend run build
