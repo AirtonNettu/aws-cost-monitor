@@ -33,6 +33,10 @@ flowchart LR
 - **ADR-006 Isolamento de relatórios em memória:** Downloads de relatórios reconstituem os dados a partir do banco e utilizam builders em memória com Content-Disposition seguro, eliminando riscos de path traversal no sistema de arquivos.
 - **ADR-007 Migração incremental com preservação de dados legados:** A função `init_db` verifica colunas existentes via `PRAGMA table_info(runs)` e executa `ALTER TABLE runs ADD COLUMN` apenas para as ausentes. Dados legados permanecem intactos.
 - **ADR-008 Alinhamento estrito Pydantic-Zod e timezone UTC:** Modelos Pydantic aplicam validadores de formato de data ISO `YYYY-MM-DD` com `start < end` e serializam timestamps com fuso UTC obrigatório para satisfazer a checagem `z.iso.datetime({ offset: true })` do Zod. Snapshots legados sem timezone retornam HTTP 409 em vez de falsificar fuso.
+- **ADR-009 Integridade Financeira, Equivalência Estrita e Paginação Consistente no Histórico:**
+  - *Integridade Numérica:* Proibição de `NaN`, `Infinity` e `-Infinity` em todos os modelos Pydantic (`allow_inf_nan=False` e `FiniteFloat`) e na camada de repositório (`ensure_finite_float`). Preservação de valores negativos para créditos/descontos AWS e rejeição de entradas inválidas sem conversão silenciosa para zero.
+  - *Equivalência Estrita:* `equivalent_periods` requer metadados completos, duração idêntica, intervalos não sobrepostos (`prev_end <= curr_start`) e identidade estrita de tags/escopos.
+  - *Paginação Consistente:* O endpoint `/api/v1/runs` utiliza `only_compatible=True` no SQL, garantindo que `LIMIT ? OFFSET ?` se aplique estritamente às execuções válidas para a API, eliminando descarte silencioso e encolhimento de páginas. Logs estruturados sem dados sensíveis registram anomalias.
 
 ## Requisitos Não Funcionais Validados
 - **Performance:** Consultas indexadas por `(days, tag)` e `created_at DESC`.

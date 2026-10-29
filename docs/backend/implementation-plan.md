@@ -14,7 +14,8 @@
 | 7 | Download Seguro de Relatórios | ✅ Concluído | Geração in-memory de relatórios nos formatos `json`, `markdown`, `html`, `txt` sem path traversal. |
 | 8 | Semeadura Sintética | ✅ Concluído | `src/database/seeds.py` e `scripts/seed_snapshots.py` carregando fixtures para frontend. |
 | 9 | Integração React Vite Proxy | ✅ Concluído | `frontend/vite.config.ts` com proxy reverso `/api` apontando para o backend FastAPI local. |
-| 10 | Documentação & ADRs | ✅ Concluído | ADR-007 e ADR-008 documentadas em `docs/backend/architecture.md`. |
+| 10 | Documentação & ADRs | ✅ Concluído | ADR-007, ADR-008 e ADR-009 documentadas em `docs/backend/architecture.md`. |
+| 11 | Revisão Corretiva da PR #7 | ✅ Concluído | Equivalência estrita de períodos, paginação consistente em `/runs` e validação de números finitos. |
 
 ## Critérios de Aceite Atendidos
 - [x] GET de UI não consulta Cost Explorer e não executa Ollama.
@@ -26,3 +27,7 @@
 - [x] Nenhum teste automatizado depende de AWS ou Ollama real.
 - [x] Preservado o funcionamento do Streamlit (`src/dashboard/app.py`) e da CLI (`src/main.py`).
 - [x] Build de produção do frontend (`tsc -b && vite build`) concluído com sucesso.
+- [x] `equivalent_periods` valida metadados, mesma duração, sem sobreposição e escopos idênticos.
+- [x] `/api/v1/runs` utiliza `only_compatible=True` no SQL, garantindo paginação consistente e eliminando descarte silencioso.
+- [x] Proibição rigorosa de `NaN`, `Infinity` e `-Infinity` em Pydantic e SQLite, com preservação de créditos negativos.
+- [x] Workflow GitHub Actions configurado com permissões mínimas (`contents: read`) e sem chamadas externas.
