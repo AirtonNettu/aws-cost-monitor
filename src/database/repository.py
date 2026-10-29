@@ -8,12 +8,88 @@ de reconsultas à AWS.
 from __future__ import annotations
 
 import json
+import math
 import os
 import sqlite3
 from datetime import datetime, timezone
 from typing import Any
 
 from src import config
+
+
+def ensure_finite_float(val: Any, field_name: str = "valor", allow_none: bool = False) -> float | None:
+    """Garante que um valor financeiro seja um float finito válido.
+
+    - Rejeita estritamente NaN, Infinity e -Infinity levantando ValueError.
+    - Rejeita valores não numéricos sem converter silenciosamente para zero.
+    - Preserva números negativos (ex: créditos e estornos da AWS).
+    """
+    if val is None:
+        if allow_none:
+            return None
+        raise ValueError(f"Campo financeiro '{field_name}' não pode ser nulo.")
+
+    try:
+        num = float(val)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Campo financeiro '{field_name}' inválido: valor '{val!r}' não pode ser convertido para número."
+        ) from exc
+
+    if not math.isfinite(num):
+        raise ValueError(
+            f"Campo financeiro '{field_name}' inválido: valores NaN e Infinito são proibidos (recebido: {val})."
+        )
+
+    return num
+
+
+def check_period_equivalence(
+    curr_start: str | None,
+    curr_end: str | None,
+    prev_start: str | None,
+    prev_end: str | None,
+    curr_scope: str | None = None,
+    prev_scope: str | None = None,
+) -> bool:
+    """Valida se dois períodos e seus respectivos escopos são efetivamente comparáveis.
+
+    Regras de equivalência:
+    1. Metadados completos: datas de início e fim presentes e em formato ISO YYYY-MM-DD.
+    2. Validade temporal: start < end em ambos os intervalos.
+    3. Duração idêntica: exatamente o mesmo número de dias em ambos os períodos.
+    4. Sem sobreposição: o período anterior deve terminar antes ou no máximo no início do período atual (prev_end <= curr_start).
+    5. Escopo idêntico: se tags/filtros forem definidos, devem ser estritamente iguais.
+    """
+    if not (curr_start and curr_end and prev_start and prev_end):
+        return False
+
+    clean_curr_scope = curr_scope.strip() if curr_scope and curr_scope.strip() else None
+    clean_prev_scope = prev_scope.strip() if prev_scope and prev_scope.strip() else None
+    if clean_curr_scope != clean_prev_scope:
+        return False
+
+    try:
+        c_start = datetime.strptime(curr_start, "%Y-%m-%d").date()
+        c_end = datetime.strptime(curr_end, "%Y-%m-%d").date()
+        p_start = datetime.strptime(prev_start, "%Y-%m-%d").date()
+        p_end = datetime.strptime(prev_end, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return False
+
+    if c_start >= c_end or p_start >= p_end:
+        return False
+
+    d_curr = (c_end - c_start).days
+    d_prev = (p_end - p_start).days
+    if d_curr != d_prev or d_curr <= 0:
+        return False
+
+    # Intervalos sobrepostos não são comparáveis como períodos sequenciais
+    if p_end > c_start:
+        return False
+
+    return True
 
 
 def _get_connection(db_path=None) -> sqlite3.Connection:
@@ -112,8 +188,18 @@ def save_run(
     period_end = costs[-1]["end"] if costs else None
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    prev_tot = comparison["previous_total"] if comparison else None
-    variation = comparison["variation"] if comparison else None
+    # Validação rigorosa dos valores financeiros de nível superior
+    total_cost_clean = ensure_finite_float(analysis["total_cost"], "total_cost")
+    prev_tot = (
+        ensure_finite_float(comparison["previous_total"], "previous_total", allow_none=True)
+        if comparison
+        else None
+    )
+    variation = (
+        ensure_finite_float(comparison["variation"], "variation", allow_none=True)
+        if comparison
+        else None
+    )
     alerts_json = json.dumps(alerts or [], ensure_ascii=False)
 
     # Deriva days se não fornecido explicitamente
@@ -133,9 +219,16 @@ def save_run(
     else:
         estimated_val = 1 if estimated else 0
 
-    # Deriva timeline
+    # Deriva timeline com validação de números finitos
     if timeline is not None:
-        timeline_json = json.dumps(timeline, ensure_ascii=False)
+        validated_tl = [
+            {
+                "date": str(item["date"]),
+                "amount": ensure_finite_float(item["amount"], "timeline amount"),
+            }
+            for item in timeline
+        ]
+        timeline_json = json.dumps(validated_tl, ensure_ascii=False)
     elif costs:
         tl = []
         for c in costs:
@@ -146,33 +239,51 @@ def save_run(
                 if "Metrics" in g and "UnblendedCost" in g["Metrics"]
             )
             if dt:
-                tl.append({"date": dt, "amount": round(amt, 2)})
+                tl.append({"date": dt, "amount": ensure_finite_float(round(amt, 2), "timeline amount")})
         timeline_json = json.dumps(tl, ensure_ascii=False) if tl else None
     else:
         timeline_json = None
 
-    # Deriva comparison_json estruturado
+    # Deriva comparison_json estruturado com validação de equivalência estrita
     if comparison is not None:
         prev_p = comparison.get("previous_period")
         if not prev_p and costs and len(costs) >= 2:
             prev_p = {"start": costs[-2]["start"], "end": costs[-2]["end"]}
-        equiv = comparison.get("equivalent_periods")
-        if equiv is None and prev_p and period_start and period_end:
-            try:
-                d1 = (datetime.strptime(prev_p["end"], "%Y-%m-%d") - datetime.strptime(prev_p["start"], "%Y-%m-%d")).days
-                d2 = (datetime.strptime(period_end, "%Y-%m-%d") - datetime.strptime(period_start, "%Y-%m-%d")).days
-                equiv = (d1 == d2 and d1 > 0)
-            except Exception:
-                equiv = False
 
-        comp_dict = {
-            "previous_total": float(prev_tot) if prev_tot is not None else 0.0,
-            "current_total": float(comparison.get("current_total", analysis.get("total_cost", 0.0))),
-            "variation": float(variation) if variation is not None else None,
-            "equivalent_periods": bool(equiv),
-            "previous_period": prev_p,
-        }
-        comparison_json = json.dumps(comp_dict, ensure_ascii=False)
+        prev_scope = comparison.get("previous_scope", tag)
+
+        equiv = check_period_equivalence(
+            curr_start=period_start,
+            curr_end=period_end,
+            prev_start=prev_p.get("start") if prev_p else None,
+            prev_end=prev_p.get("end") if prev_p else None,
+            curr_scope=tag,
+            prev_scope=prev_scope,
+        )
+
+        valid_prev_period = False
+        if prev_p and prev_p.get("start") and prev_p.get("end"):
+            try:
+                ps = datetime.strptime(prev_p["start"], "%Y-%m-%d").date()
+                pe = datetime.strptime(prev_p["end"], "%Y-%m-%d").date()
+                if ps < pe:
+                    valid_prev_period = True
+            except Exception:
+                valid_prev_period = False
+
+        if valid_prev_period:
+            comp_dict = {
+                "previous_total": prev_tot if prev_tot is not None else 0.0,
+                "current_total": ensure_finite_float(
+                    comparison.get("current_total", total_cost_clean), "current_total"
+                ),
+                "variation": variation,
+                "equivalent_periods": equiv,
+                "previous_period": {"start": prev_p["start"], "end": prev_p["end"]},
+            }
+            comparison_json = json.dumps(comp_dict, ensure_ascii=False)
+        else:
+            comparison_json = None
     else:
         comparison_json = None
 
@@ -194,11 +305,9 @@ def save_run(
         }
         ai_json = json.dumps(ai_dict, ensure_ascii=False)
 
-    # Formatos de relatório suportados
     report_formats_list = report_formats or ["json", "markdown", "html", "txt"]
     report_formats_json = json.dumps(report_formats_list, ensure_ascii=False)
 
-    # Filtros disponíveis
     filters_dict = available_filters or {
         "days": [7, 30, 90],
         "tags": [tag] if tag else [],
@@ -222,11 +331,11 @@ def save_run(
                 now_iso,
                 period_start,
                 period_end,
-                float(analysis["total_cost"]),
-                1 if analysis["has_positive_cost"] else 0,
-                analysis["largest_service"],
-                float(prev_tot) if prev_tot is not None else None,
-                float(variation) if variation is not None else None,
+                total_cost_clean,
+                1 if analysis.get("has_positive_cost") else (1 if total_cost_clean > 0 else 0),
+                analysis.get("largest_service"),
+                prev_tot,
+                variation,
                 alerts_json,
                 ai_interpretation,
                 source,
@@ -242,16 +351,24 @@ def save_run(
         )
         run_id = cursor.lastrowid
 
-        # Insere detalhamento dos serviços
-        if analysis.get("has_positive_cost"):
+        # Insere detalhamento dos serviços com validação de floats finitos
+        # Aceita valores negativos (ex: créditos e reembolsos de serviços da AWS)
+        positive_services = analysis.get("positive_services", {})
+        all_services = analysis.get("services", positive_services)
+        services_to_insert = positive_services if analysis.get("has_positive_cost") else all_services
+
+        if services_to_insert:
             service_records = [
                 (
                     run_id,
                     srv,
-                    float(amt),
-                    float(analysis.get("percentages", {}).get(srv, 0.0)),
+                    ensure_finite_float(amt, f"amount do serviço '{srv}'"),
+                    ensure_finite_float(
+                        analysis.get("percentages", {}).get(srv, 0.0),
+                        f"percentage do serviço '{srv}'",
+                    ),
                 )
-                for srv, amt in analysis.get("positive_services", {}).items()
+                for srv, amt in services_to_insert.items()
             ]
             cursor.executemany(
                 """
@@ -266,7 +383,7 @@ def save_run(
 
 
 def save_snapshot(snapshot: dict, db_path=None) -> int:
-    """Insere um snapshot estruturado diretamente no SQLite."""
+    """Insere um snapshot estruturado diretamente no SQLite com validações estritas."""
     init_db(db_path)
     period = snapshot["period"]
     period_start = period["start"]
@@ -279,9 +396,56 @@ def save_snapshot(snapshot: dict, db_path=None) -> int:
         days = 30
 
     summary = snapshot["summary"]
+    total_cost_clean = ensure_finite_float(summary["total_cost"], "summary.total_cost")
+
     comparison = snapshot.get("comparison")
-    prev_tot = comparison["previous_total"] if comparison else None
-    variation = comparison["variation"] if comparison else None
+    prev_tot = (
+        ensure_finite_float(comparison["previous_total"], "comparison.previous_total", allow_none=True)
+        if comparison
+        else None
+    )
+    variation = (
+        ensure_finite_float(comparison["variation"], "comparison.variation", allow_none=True)
+        if comparison
+        else None
+    )
+
+    # Valida equivalência se houver comparison
+    comparison_to_save = None
+    if comparison and comparison.get("previous_period"):
+        prev_p = comparison["previous_period"]
+        equiv = check_period_equivalence(
+            curr_start=period_start,
+            curr_end=period_end,
+            prev_start=prev_p.get("start"),
+            prev_end=prev_p.get("end"),
+            curr_scope=snapshot.get("tag"),
+            prev_scope=comparison.get("previous_scope", snapshot.get("tag")),
+        )
+        try:
+            ps = datetime.strptime(prev_p["start"], "%Y-%m-%d").date()
+            pe = datetime.strptime(prev_p["end"], "%Y-%m-%d").date()
+            if ps < pe:
+                comparison_to_save = {
+                    "previous_total": prev_tot if prev_tot is not None else 0.0,
+                    "current_total": ensure_finite_float(
+                        comparison.get("current_total", total_cost_clean), "comparison.current_total"
+                    ),
+                    "variation": variation,
+                    "equivalent_periods": equiv,
+                    "previous_period": {"start": prev_p["start"], "end": prev_p["end"]},
+                }
+        except Exception:
+            comparison_to_save = None
+
+    # Validação da timeline
+    validated_tl = [
+        {
+            "date": str(item["date"]),
+            "amount": ensure_finite_float(item["amount"], "timeline amount"),
+        }
+        for item in snapshot.get("timeline", [])
+    ]
 
     with _get_connection(db_path) as conn:
         cursor = conn.cursor()
@@ -300,19 +464,19 @@ def save_snapshot(snapshot: dict, db_path=None) -> int:
                 snapshot["collected_at"],
                 period_start,
                 period_end,
-                float(summary["total_cost"]),
-                1 if summary["total_cost"] > 0 else 0,
+                total_cost_clean,
+                1 if total_cost_clean > 0 else 0,
                 summary.get("largest_service"),
-                float(prev_tot) if prev_tot is not None else None,
-                float(variation) if variation is not None else None,
+                prev_tot,
+                variation,
                 json.dumps(snapshot.get("alerts", []), ensure_ascii=False),
                 snapshot.get("ai", {}).get("text") if snapshot.get("ai") else None,
                 snapshot.get("source", "aws"),
                 snapshot.get("tag"),
                 days,
                 1 if snapshot.get("estimated") else 0,
-                json.dumps(snapshot.get("timeline", []), ensure_ascii=False),
-                json.dumps(comparison, ensure_ascii=False) if comparison else None,
+                json.dumps(validated_tl, ensure_ascii=False),
+                json.dumps(comparison_to_save, ensure_ascii=False) if comparison_to_save else None,
                 json.dumps(snapshot.get("ai", {}), ensure_ascii=False),
                 json.dumps(snapshot.get("available_filters", {}), ensure_ascii=False),
                 json.dumps(snapshot.get("report_formats", []), ensure_ascii=False),
@@ -326,8 +490,8 @@ def save_snapshot(snapshot: dict, db_path=None) -> int:
                 (
                     run_id,
                     srv["name"],
-                    float(srv["amount"]),
-                    float(srv["percentage"]),
+                    ensure_finite_float(srv["amount"], f"amount do serviço '{srv['name']}'"),
+                    ensure_finite_float(srv["percentage"], f"percentage do serviço '{srv['name']}'"),
                 )
                 for srv in services
             ]
@@ -392,14 +556,40 @@ def get_run_by_id(run_id: int, db_path=None) -> dict | None:
         return d
 
 
-def get_history(limit=30, offset=0, tag=None, days=None, db_path=None) -> list[dict]:
-    """Recupera o histórico recente de execuções com suporte a paginação e filtros."""
+def get_history(
+    limit: int = 30,
+    offset: int = 0,
+    tag: str | None = None,
+    days: int | None = None,
+    only_compatible: bool = False,
+    order_desc: bool = False,
+    db_path: str | None = None,
+) -> list[dict]:
+    """Recupera o histórico recente de execuções com suporte a paginação e filtros.
+
+    Parâmetros
+    ----------
+    only_compatible : bool
+        Se True, filtra no SQLite apenas registros que atendem aos requisitos da API
+        (período definido e timestamp com fuso offset/Z), garantindo paginação consistente.
+    order_desc : bool
+        Se True, retorna na ordem mais recente para o mais antigo (newest first).
+        Se False, preserva a ordem cronológica legada (oldest first).
+    """
     init_db(db_path)
     with _get_connection(db_path) as conn:
         cursor = conn.cursor()
         query = "SELECT * FROM runs"
         conditions = []
         params: list[Any] = []
+
+        if only_compatible:
+            conditions.append("period_start IS NOT NULL AND period_start != ''")
+            conditions.append("period_end IS NOT NULL AND period_end != ''")
+            conditions.append(
+                "(created_at LIKE '%+%' OR created_at LIKE '%Z' OR SUBSTR(created_at, 20) LIKE '-%')"
+            )
+
         if days is not None:
             conditions.append("days = ?")
             params.append(days)
@@ -409,15 +599,18 @@ def get_history(limit=30, offset=0, tag=None, days=None, db_path=None) -> list[d
             else:
                 conditions.append("tag = ?")
                 params.append(tag)
+
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
+
         query += " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
         cursor.execute(query, params)
         rows = cursor.fetchall()
 
     result = []
-    for row in reversed(rows):
+    iterable = rows if order_desc else reversed(rows)
+    for row in iterable:
         d = dict(row)
         d["alerts"] = json.loads(d["alerts_json"]) if d["alerts_json"] else []
         result.append(d)

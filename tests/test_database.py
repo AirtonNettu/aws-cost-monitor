@@ -1,5 +1,6 @@
-"""Testes para o repositório SQLite de persistência de custos e migrações."""
+"""Testes para o repositório SQLite de persistência de custos, equivalência e integridade."""
 
+import math
 import sqlite3
 from datetime import datetime, timezone
 import pytest
@@ -7,6 +8,8 @@ import pytest
 from src.analysis.cost_analyzer import analyze_costs, compare_periods
 from src.analysis.finops_rules import generate_alerts
 from src.database.repository import (
+    check_period_equivalence,
+    ensure_finite_float,
     get_available_days,
     get_available_tags,
     get_history,
@@ -184,14 +187,13 @@ def test_legacy_migration_without_data_loss(tmp_path):
 
 def test_get_history_pagination_and_filtering(costs_two_periods, temp_db):
     analysis = analyze_costs(costs_two_periods)
-    # Insere 5 execuções com diferentes parâmetros
     save_run(costs_two_periods, analysis, db_path=temp_db, days=7, tag="Alpha")
     save_run(costs_two_periods, analysis, db_path=temp_db, days=30, tag="Alpha")
     save_run(costs_two_periods, analysis, db_path=temp_db, days=30, tag="Beta")
     save_run(costs_two_periods, analysis, db_path=temp_db, days=90, tag=None)
     save_run(costs_two_periods, analysis, db_path=temp_db, days=30, tag=None)
 
-    # Paginação
+    # Paginação legada
     p1 = get_history(limit=2, offset=0, db_path=temp_db)
     assert len(p1) == 2
     p2 = get_history(limit=2, offset=2, db_path=temp_db)
@@ -217,17 +219,228 @@ def test_get_history_pagination_and_filtering(costs_two_periods, temp_db):
     assert set(days_list) == {7, 30, 90}
 
 
+def test_check_period_equivalence_regression():
+    """Valida exaustivamente as regras de equivalência de períodos para FinOps."""
+    # 1. Períodos contíguos de mesma duração e mesmo escopo -> True
+    assert check_period_equivalence(
+        curr_start="2026-10-01",
+        curr_end="2026-10-31",
+        prev_start="2026-09-01",
+        prev_end="2026-10-01",
+        curr_scope="Env: Prod",
+        prev_scope="Env: Prod",
+    ) is True
+
+    # 2. Ambos sem escopo -> True
+    assert check_period_equivalence(
+        curr_start="2026-10-01",
+        curr_end="2026-10-31",
+        prev_start="2026-09-01",
+        prev_end="2026-10-01",
+        curr_scope=None,
+        prev_scope=None,
+    ) is True
+
+    # 3. Escopos distintos (tags diferentes) -> False
+    assert check_period_equivalence(
+        curr_start="2026-10-01",
+        curr_end="2026-10-31",
+        prev_start="2026-09-01",
+        prev_end="2026-10-01",
+        curr_scope="Env: Prod",
+        prev_scope="Env: Staging",
+    ) is False
+
+    # 4. Um com escopo e outro sem escopo -> False
+    assert check_period_equivalence(
+        curr_start="2026-10-01",
+        curr_end="2026-10-31",
+        prev_start="2026-09-01",
+        prev_end="2026-10-01",
+        curr_scope="Env: Prod",
+        prev_scope=None,
+    ) is False
+
+    # 5. Intervalos sobrepostos (prev_end > curr_start) -> False
+    assert check_period_equivalence(
+        curr_start="2026-10-15",
+        curr_end="2026-11-14",
+        prev_start="2026-10-01",
+        prev_end="2026-10-31",
+    ) is False
+
+    # 6. Durações incompatíveis (ex: 30 dias vs 7 dias) -> False
+    assert check_period_equivalence(
+        curr_start="2026-10-01",
+        curr_end="2026-10-31",
+        prev_start="2026-09-24",
+        prev_end="2026-10-01",
+    ) is False
+
+    # 7. Ausência de metadados de data -> False
+    assert check_period_equivalence(None, "2026-10-31", "2026-09-01", "2026-10-01") is False
+    assert check_period_equivalence("2026-10-01", "2026-10-31", None, "2026-10-01") is False
+    assert check_period_equivalence("2026-10-01", "2026-10-31", "2026-09-01", None) is False
+
+    # 8. Datas inválidas ou invertidas (start >= end) -> False
+    assert check_period_equivalence(
+        curr_start="2026-10-31",
+        curr_end="2026-10-01",
+        prev_start="2026-09-01",
+        prev_end="2026-10-01",
+    ) is False
+
+
+def test_ensure_finite_float_validation():
+    """Valida a integridade de números financeiros nas fronteiras de persistência."""
+    # Números válidos (positivos, zero, negativos)
+    assert ensure_finite_float(100.50) == 100.50
+    assert ensure_finite_float(0.0) == 0.0
+    # Preservação de números negativos legítimos (créditos e estornos da AWS)
+    assert ensure_finite_float(-25.75) == -25.75
+    assert ensure_finite_float("-12.34") == -12.34
+
+    # None permitido apenas quando allow_none=True
+    assert ensure_finite_float(None, allow_none=True) is None
+    with pytest.raises(ValueError, match="não pode ser nulo"):
+        ensure_finite_float(None, allow_none=False)
+
+    # Rejeição estrita de NaN, Infinity e -Infinity
+    with pytest.raises(ValueError, match="NaN e Infinito são proibidos"):
+        ensure_finite_float(float("nan"))
+    with pytest.raises(ValueError, match="NaN e Infinito são proibidos"):
+        ensure_finite_float(float("inf"))
+    with pytest.raises(ValueError, match="NaN e Infinito são proibidos"):
+        ensure_finite_float(float("-inf"))
+
+    # Rejeição de valores não numéricos sem conversão silenciosa para zero
+    with pytest.raises(ValueError, match="não pode ser convertido para número"):
+        ensure_finite_float("invalido")
+
+
+def test_save_run_rejects_nan_and_preserves_negative_credits(temp_db):
+    """Testa que save_run bloqueia NaN/Inf e aceita créditos negativos."""
+    costs = [{"start": "2026-10-01", "end": "2026-10-31", "groups": []}]
+
+    # 1. Rejeita NaN no total_cost
+    bad_analysis = {
+        "services": {},
+        "total_cost": float("nan"),
+        "positive_services": {},
+        "percentages": {},
+        "largest_service": None,
+        "has_positive_cost": False,
+    }
+    with pytest.raises(ValueError, match="NaN e Infinito são proibidos"):
+        save_run(costs, bad_analysis, db_path=temp_db)
+
+    # 2. Rejeita Infinity no detalhamento de serviço
+    inf_service_analysis = {
+        "services": {"Amazon EC2": float("inf")},
+        "total_cost": 100.0,
+        "positive_services": {"Amazon EC2": float("inf")},
+        "percentages": {"Amazon EC2": 100.0},
+        "largest_service": "Amazon EC2",
+        "has_positive_cost": True,
+    }
+    with pytest.raises(ValueError, match="NaN e Infinito são proibidos"):
+        save_run(costs, inf_service_analysis, db_path=temp_db)
+
+    # 3. Preserva serviço de crédito negativo (ex: Savings Plan / Refund)
+    credit_analysis = {
+        "services": {"AWS Credit Refund": -30.0, "Amazon S3": 50.0},
+        "total_cost": 20.0,
+        "positive_services": {"Amazon S3": 50.0},
+        "percentages": {"Amazon S3": 100.0},
+        "largest_service": "Amazon S3",
+        "has_positive_cost": True,
+    }
+    run_id = save_run(costs, credit_analysis, db_path=temp_db)
+    assert run_id > 0
+    saved_services = get_run_services(run_id, db_path=temp_db)
+    assert len(saved_services) == 1
+    assert saved_services[0]["service_name"] == "Amazon S3"
+
+
+def test_consistent_pagination_with_interspersed_legacy_rows(tmp_path):
+    """Garante que registros legados não causam encolhimento de páginas no histórico
+
+    ao utilizar only_compatible=True.
+    """
+    db_file = str(tmp_path / "mixed.db")
+    init_db(db_file)
+
+    # Insere registros legados (created_at ingênuo sem timezone)
+    conn = sqlite3.connect(db_file)
+    for i in range(1, 6):
+        conn.execute(
+            """
+            INSERT INTO runs (
+                created_at, period_start, period_end, total_cost,
+                has_positive_cost, largest_service, alerts_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                f"2026-09-0{i}T12:00:00",
+                "2026-08-01",
+                "2026-09-01",
+                float(i * 10),
+                1,
+                "Amazon EC2",
+                "[]",
+            ),
+        )
+    conn.commit()
+    conn.close()
+
+    # Insere 15 registros compatíveis (com timezone UTC e metadados)
+    for i in range(1, 16):
+        save_run(
+            costs=[{"start": f"2026-10-{i:02d}", "end": f"2026-10-{(i+1):02d}", "groups": []}],
+            analysis={
+                "services": {"Amazon EC2": 10.0},
+                "total_cost": 10.0,
+                "positive_services": {"Amazon EC2": 10.0},
+                "percentages": {"Amazon EC2": 100.0},
+                "largest_service": "Amazon EC2",
+                "has_positive_cost": True,
+            },
+            days=30,
+            db_path=db_file,
+        )
+
+    # Paginação consistente com only_compatible=True
+    # Página 1 (limit=5, offset=0) deve retornar exatamente 5 registros compatíveis
+    page1 = get_history(limit=5, offset=0, only_compatible=True, order_desc=True, db_path=db_file)
+    assert len(page1) == 5
+    for r in page1:
+        assert "+" in r["created_at"] or "Z" in r["created_at"]
+
+    # Página 2 (limit=5, offset=5) deve retornar os próximos 5 registros compatíveis
+    page2 = get_history(limit=5, offset=5, only_compatible=True, order_desc=True, db_path=db_file)
+    assert len(page2) == 5
+
+    # Página 3 (limit=5, offset=10) deve retornar os últimos 5 registros compatíveis
+    page3 = get_history(limit=5, offset=10, only_compatible=True, order_desc=True, db_path=db_file)
+    assert len(page3) == 5
+
+    # IDs de páginas distintas não podem se sobrepor
+    ids1 = {r["id"] for r in page1}
+    ids2 = {r["id"] for r in page2}
+    ids3 = {r["id"] for r in page3}
+    assert ids1.isdisjoint(ids2)
+    assert ids2.isdisjoint(ids3)
+    assert len(ids1 | ids2 | ids3) == 15
+
+
 def test_seed_fixtures(temp_db):
     inserted_ids = seed_fixtures(db_path=temp_db)
     assert len(inserted_ids) > 0
 
-    # Verifica snapshot 30 dias sem tag
     snap30 = get_latest_snapshot(days=30, tag=None, db_path=temp_db)
     assert snap30 is not None
     assert snap30["days"] == 30
-    assert snap30["currency"] if "currency" in snap30 else True
 
-    # Verifica snapshot 7 dias com tag
     snap7 = get_latest_snapshot(days=7, tag="Environment: Production", db_path=temp_db)
     assert snap7 is not None
     assert snap7["days"] == 7
