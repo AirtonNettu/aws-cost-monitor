@@ -1,31 +1,25 @@
-# Backend Python + FastAPI + Ollama — pacote de especificação
+# Backend Python + FastAPI — Implementação de Leitura e Contratos (PR #7)
 
-**Estado:** proposta técnica documentada; **não implementada**. Branch: `docs/fastapi-ollama-architecture`. Frontend React integrado à `main` pelo PR #5. Não confundir contrato proposto com endpoint ativo.
+**Estado:** Implementado e validado na branch `feat/fastapi-snapshot-api`. Endpoints de leitura da API FastAPI ativos, compatíveis com os contratos Zod do frontend React, apoiados por migração incremental do SQLite e suíte completa de testes.
 
 ## Índice de leitura
-1. [Arquitetura](architecture.md) — componentes, fluxos, limites e ADRs.
-2. [Contratos HTTP](api-contracts.md) — rotas, schemas, erros e exemplos.
-3. [Engenharia de IA](ai-integration.md) — Ollama, segurança, saídas e avaliação.
-4. [Dados, segurança e FinOps](data-security.md) — SQLite, AWS, autorização e custos.
-5. [Plano de implementação e testes](implementation-plan.md) — ordem técnica, aceites e riscos.
-6. [Contrato existente do frontend](../frontend/api-contract.md) — fonte inicial das tipagens Zod.
+1. [Arquitetura](architecture.md) — componentes, fluxos, limites, ADRs e decisões da PR #7.
+2. [Contratos HTTP](api-contracts.md) — rotas implementadas, schemas Pydantic, respostas, erros e mapeamento Zod.
+3. [Engenharia de IA](ai-integration.md) — Ollama, desacoplamento, estados no Snapshot (`ai`) e evolução futura.
+4. [Dados, segurança e FinOps](data-security.md) — SQLite, migração incremental, proteção contra vazamento e limites de custo.
+5. [Plano de implementação e testes](implementation-plan.md) — checklist de tarefas, critérios de aceite atendidos e evidências.
+6. [Contrato existente do frontend](../frontend/api-contract.md) — especificação TypeScript/Zod consumida pelo React.
 
-## Escopo
-Conectar a SPA React ao backend Python sem duplicar cálculos. Servir snapshots persistidos, histórico e relatórios com autorização. Evoluir a integração local Ollama existente com estruturação, observabilidade e avaliação. O backend continuará em Python; Node é apenas ferramenta do frontend.
+## Escopo Realizado na PR #7
+Conectar a SPA React ao backend Python FastAPI sem duplicar cálculos FinOps nem invocar chamadas com custo à AWS em requisições HTTP:
+- **API FastAPI (`src/api/app.py`):** endpoints `/api/v1/health`, `/api/v1/snapshots/latest`, `/api/v1/runs`, `/api/v1/runs/{id}` e `/api/v1/runs/{id}/reports/{format}`.
+- **Modelos Pydantic v2:** alinhamento estrito (`extra="forbid"`) com schemas Zod (`snapshotSchema`, `historySchema`).
+- **Migração Incremental do SQLite (`src/database/repository.py`):** adição segura de colunas de metadados (`source`, `tag`, `days`, `estimated`, `timeline_json`, `comparison_json`, `ai_json`, `available_filters_json`, `report_formats_json`) sem perda de dados legados e criação de índices otimizados.
+- **Semeadura Sintética (`src/database/seeds.py` e `scripts/seed_snapshots.py`):** carga de dados sintéticos fiéis às fixtures para desenvolvimento e testes ponta a ponta sem dependência de credenciais ou rede AWS.
+- **Segurança e Isolamento:** relatórios gerados em memória prevenindo path traversal; CORS restrito; nenhum segredo ou dado sensível exposto em erros.
 
-## Situação verificada no código
-- `src/aws/cost_explorer.py`: boto3 Cost Explorer com períodos, paginação e agrupamento SERVICE **ou** TAG.
-- `src/analysis/cost_analyzer.py`: total, ranking, percentuais, comparação determinística.
-- `src/analysis/finops_rules.py`: regras growth, concentration, top_services e untagged_resources.
-- `src/database/repository.py`: SQLite com tabelas runs e service_costs; histórico sem série diária completa.
-- `src/ai/llama_client.py`: POST /api/generate, texto livre, timeout e erros explícitos.
-- `src/main.py`: CLI/orquestrador; Streamlit preservado.
-- `frontend/src/api/contracts.ts`: schema de snapshot esperado pelo React.
-- **FastAPI não consta como implementado**; nenhuma API real foi testada neste pacote.
-
-## Princípios
+## Princípios Inegociáveis
 **React apresenta. FastAPI orquestra. Python calcula. Ollama interpreta.**
-Dados financeiros são produzidos e validados em Python. LLM não autoriza ações nem altera custos. A indisponibilidade de IA não bloqueia a visualização FinOps. Custo zero é objetivo sujeito à verificação de preços e limites AWS, não garantia.
-
-## Processo de aprovação
-Documentação pode ser revisada e ajustada antes de implementação. Cada etapa de código exige testes, commit por tarefa e branch de trabalho; sem merge, deploy ou alteração de `main` sem aprovação.
+- Todas as rotas de leitura servem snapshots locais persistidos.
+- Nenhuma rota HTTP GET realiza requisição à AWS ou aciona inferência de IA.
+- Valores ausentes no banco legado não são fabricados: snapshots legados sem timezone UTC retornam HTTP 409 em vez de falsificar fuso horário.

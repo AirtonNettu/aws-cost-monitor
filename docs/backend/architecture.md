@@ -1,86 +1,44 @@
-# Arquitetura proposta — FastAPI e AI Application Engineering
+# Arquitetura — FastAPI e Integração de Snapshots (PR #7)
 
-**Status:** proposta; não é descrição de componentes já implantados.
+**Status:** Implementado e aprovado em testes unitários e de integração na branch `feat/fastapi-snapshot-api`.
 
-## Contexto e objetivo
-O AWS Cost Monitor já calcula e armazena resultados de FinOps em Python. O frontend React apresenta snapshots fictícios porque ainda não existe servidor FastAPI. Construiremos uma camada HTTP que exponha snapshots reais **já persistidos**, sem transformar navegação em consultas cobradas ao Cost Explorer.
+## Contexto e Objetivo
+O AWS Cost Monitor possui motor determinístico de FinOps em Python e um dashboard SPA React/TypeScript. A PR #7 implementa a camada HTTP FastAPI que expõe os snapshots persistidos em SQLite, sem permitir que requisições de leitura disparem chamadas ao AWS Cost Explorer ou gerem custos.
 
 ```mermaid
 flowchart LR
-  UI["React/TypeScript\nSPA"] -->|HTTPS JSON| API["FastAPI\nPython"]
-  API --> AUTH["AuthN/AuthZ\npolíticas"]
-  API --> APP["Application services\nuse cases"]
-  APP --> REPO["Snapshot repository\nSQLite"]
-  APP --> FIN["FinOps Python\nregras e análise"]
-  COL["Coleta agendada/autorizada"] --> AWS["AWS Cost Explorer\nboto3"]
-  COL --> FIN
+  UI["React/TypeScript\nSPA (Vite)"] -->|HTTP GET /api/v1| API["FastAPI\napp.py"]
+  API --> CORS["CORS Restrito\nGET, OPTIONS"]
+  API --> REPO["Repository SQLite\nrepository.py"]
+  REPO --> DB[("SQLite\ndata/costs.db")]
+  COL["CLI / Lambda / Cron\n(autorizado)"] --> AWS["AWS Cost Explorer\nce:GetCostAndUsage"]
+  AWS --> FIN["FinOps Python\nanalyzer & rules"]
   FIN --> REPO
-  APP --> AI["AI service\nvalidação e fallback"]
-  AI --> OLL["Ollama local\n/api/generate"]
-  APP --> REPORT["Relatórios Python"]
+  API --> REPGEN["Gerador de Relatórios\nreport_generator.py"]
 ```
 
-## Responsabilidades e fronteiras
-- **React:** UI, filtros, gráficos, acessibilidade, estado remoto e mensagens de erro. Nunca segredos, cálculos críticos ou acesso direto a AWS/Ollama.
-- **FastAPI:** autenticação, autorização, validação Pydantic, HTTP, DI, rate limits, status, mapeamento de erros e OpenAPI.
-- **Application:** casos de uso `GetLatestSnapshot`, `ListRuns`, `GetRun`, `DownloadReport`, `AnalyzeSnapshotWithAI`, sem dependência de framework web.
-- **Domain:** entidades Snapshot/Run, invariantes, comparação equivalente, regras FinOps determinísticas.
-- **Infrastructure:** adaptadores SQLite, boto3, Ollama, relatórios e logs. Dependências apontam para interfaces.
-- **Coleta:** job separado e explicitamente autorizado; nunca disparado por GET de dashboard.
+## Responsabilidades e Fronteiras
+- **React (Frontend):** Apresentação, filtros dinâmicos, gráficos Recharts, acessibilidade e gerenciamento de estado via `@tanstack/react-query`. O cliente pode operar em modo `mock` ou `api` via `createDataClient()`.
+- **FastAPI (`src/api/app.py`):** Validação estrita via Pydantic v2 (`ConfigDict(extra="forbid")`), rotas REST com prefixo `/api/v1`, proteção CORS, in-memory report streaming (prevenindo path traversal) e mapeamento defensivo de erros.
+- **Repositório SQLite (`src/database/repository.py`):** Persistência de snapshots com migração incremental automática e idempotente. Suporte a consultas paginadas e filtragem por `(days, tag)`.
+- **Regra FinOps Inegociável:** Python calcula e normaliza dados financeiros; FastAPI apenas serve os snapshots salvos.
 
-## Fluxos
-### Leitura de snapshot
-1. React requisita `GET /api/v1/snapshots/latest?days=30`.
-2. FastAPI autentica/autoriza, valida filtros.
-3. Serviço lê último snapshot persistido compatível com período e tag.
-4. Mapper valida schema e serializa JSON, incluindo `source`, `collected_at`, `estimated`.
-5. 404 quando não há snapshot; **não** consultar AWS automaticamente.
+## ADRs (Architectural Decision Records)
 
-### Coleta
-1. Agendamento ou operador autorizado dispara job separado.
-2. Adaptador boto3 coleta com granularidade e limite de chamadas.
-3. Python calcula, compara períodos equivalentes e produz alertas.
-4. Persistência transacional grava snapshot e metadados; evitar duplicação por idempotência.
-5. IA pode interpretar snapshot posteriormente; falha de IA não invalida coleta.
+- **ADR-001 FastAPI como camada HTTP:** Adota FastAPI para unificar documentação OpenAPI e validação Pydantic com baixa latência e tipagem nativa Python.
+- **ADR-002 Leitura puramente cacheada:** Nenhum endpoint HTTP de leitura realiza chamada à AWS. Os snapshots consultados vêm exclusivamente do SQLite local.
+- **ADR-003 IA desacoplada no snapshot:** O objeto `Snapshot.ai` expressa estados explícitos (`ready`, `processing`, `unavailable`). A indisponibilidade de Ollama não impede a visualização dos dados financeiros.
+- **ADR-004 SQLite incremental:** Mantém SQLite sem necessidade de infraestrutura pesada (Postgres/Redis), adicionando índices e colunas de forma transacional e reversível.
+- **ADR-005 API versionada `/api/v1`:** Garante estabilidade contratual para o cliente React.
+- **ADR-006 Isolamento de relatórios em memória:** Downloads de relatórios reconstituem os dados a partir do banco e utilizam builders em memória com Content-Disposition seguro, eliminando riscos de path traversal no sistema de arquivos.
+- **ADR-007 Migração incremental com preservação de dados legados:** A função `init_db` verifica colunas existentes via `PRAGMA table_info(runs)` e executa `ALTER TABLE runs ADD COLUMN` apenas para as ausentes. Dados legados permanecem intactos.
+- **ADR-008 Alinhamento estrito Pydantic-Zod e timezone UTC:** Modelos Pydantic aplicam validadores de formato de data ISO `YYYY-MM-DD` com `start < end` e serializam timestamps com fuso UTC obrigatório para satisfazer a checagem `z.iso.datetime({ offset: true })` do Zod. Snapshots legados sem timezone retornam HTTP 409 em vez de falsificar fuso.
+- **ADR-009 Integridade Financeira, Equivalência Estrita e Paginação Consistente no Histórico:**
+  - *Integridade Numérica:* Proibição de `NaN`, `Infinity` e `-Infinity` em todos os modelos Pydantic (`allow_inf_nan=False` e `FiniteFloat`) e na camada de repositório (`ensure_finite_float`). Preservação de valores negativos para créditos/descontos AWS e rejeição de entradas inválidas sem conversão silenciosa para zero.
+  - *Equivalência Estrita:* `equivalent_periods` requer metadados completos, duração idêntica, intervalos não sobrepostos (`prev_end <= curr_start`) e identidade estrita de tags/escopos.
+  - *Paginação Consistente:* O endpoint `/api/v1/runs` utiliza `only_compatible=True` no SQL, garantindo que `LIMIT ? OFFSET ?` se aplique estritamente às execuções válidas para a API, eliminando descarte silencioso e encolhimento de páginas. Logs estruturados sem dados sensíveis registram anomalias.
 
-### Análise IA
-1. Backend seleciona snapshot existente e constrói payload factual validado.
-2. Serviço IA aplica política de contexto, tamanho e sanitização de dados.
-3. Adaptador Ollama envia requisição com timeout e parâmetros fixados.
-4. Saída é parseada, validada, checada contra fatos e persistida com status/modelo/versão do prompt.
-5. Resposta indisponível ou inválida é sinalizada sem afetar o snapshot.
-
-## Estrutura sugerida (não criada)
-```text
-src/
-  api/
-    app.py
-    routers/{snapshots,runs,reports,ai,health}.py
-    schemas/{snapshot,ai,error}.py
-    dependencies.py
-  application/
-    services/{snapshot_service,report_service,ai_service}.py
-    ports/{snapshot_repository,ai_provider}.py
-  domain/
-    models.py
-    policies.py
-  infrastructure/
-    persistence/
-    ai/ollama_provider.py
-    aws/
-```
-Preservar os módulos atuais e migrar por adaptadores; não mover código apenas por estética.
-
-## ADRs propostos
-- **ADR-001 FastAPI como camada HTTP:** separa SPA de regras e habilita OpenAPI/Pydantic; custo: manutenção de serviço adicional.
-- **ADR-002 leitura cacheada:** GET não chama Cost Explorer; custo: dados podem estar defasados e exigem `collected_at` visível.
-- **ADR-003 IA opcional e desacoplada:** FinOps funciona sem Ollama; custo: estados explícitos `unavailable` e `processing`.
-- **ADR-004 SQLite inicialmente:** reutiliza persistência existente para uso local; custo: concorrência, backups e migrações exigem atenção.
-- **ADR-005 API versionada /api/v1:** contrato estável com frontend; mudanças incompatíveis exigem revisão de versão.
-- **ADR-006 não expor Ollama na internet:** comunicação server-side restrita a loopback/rede privada, sem proxy aberto.
-
-## Requisitos não funcionais
-Contratos tipados; logging com request_id sem credenciais; testes isolados de AWS/Ollama; timeouts; CORS restrito; proteção de downloads; sem consultas cobradas por navegação; modo desenvolvimento sem conta AWS; documentação OpenAPI alinhada ao Zod.
-
-## Pontos que exigem decisão antes do código
-Modelo de autenticação para uso local vs publicação; origem e ciclo de vida dos snapshots; necessidade de múltiplas contas; política de retenção; frequência de coleta; uso de inferência síncrona ou jobs; persistência de série temporal; orçamento máximo de AWS.
+## Requisitos Não Funcionais Validados
+- **Performance:** Consultas indexadas por `(days, tag)` e `created_at DESC`.
+- **Segurança:** 0 credenciais no frontend e no código; auditoria NETTO LABS 100% aprovada.
+- **QA:** Cobertura de testes unitários e de integração em Python (pytest) e TypeScript (vitest).
