@@ -183,7 +183,7 @@ export function Layout() {
             <span>
               {client.mode === 'mock'
                 ? 'Explore o dashboard com um cenário ilustrativo. Nenhuma conexão com a AWS.'
-                : 'Leitura de snapshots pela API configurada. Contrato FastAPI proposto; integração depende do backend.'}
+                : 'Leitura de snapshots pela API configurada. API FastAPI autenticada; os indicadores de origem identificam snapshots de demonstração.'}
             </span>
           </div>
           {isSnapshot && (

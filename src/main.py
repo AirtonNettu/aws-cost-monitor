@@ -146,6 +146,7 @@ def run(
                 comparison=comparison,
                 ai_interpretation=ai_interpretation,
                 alerts=alerts,
+                tag=tag_key,
             )
             print(f"Snapshot gravado no banco de dados local (Run ID #{run_id}).")
         except Exception as exc:

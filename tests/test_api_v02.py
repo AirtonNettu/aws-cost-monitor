@@ -58,3 +58,45 @@ def test_api_recusa_configuracao_insegura(tmp_path):
     from src.api.app import create_app, Settings
     with pytest.raises(ValueError):
         create_app(Settings(tmp_path / 'a.db', 'operator', ''))
+
+
+def test_comparacao_adjacente_ignora_janela_incompativel(tmp_path):
+    """Uma coleta de sete dias não interfere no comparativo de trinta dias."""
+    from scripts.seed_demo import seed
+    from src.database.snapshots import get_snapshot
+    path = tmp_path / 'demo.db'
+    seed(path)
+    snapshot = get_snapshot(path, days=30)
+    assert snapshot.summary.total_cost == 112.5
+    assert snapshot.comparison.current_total == snapshot.summary.total_cost
+    assert snapshot.comparison.variation == 0
+    assert snapshot.comparison.previous_period.end == snapshot.period.start
+    assert snapshot.services[-1].amount == -7.5
+    assert len(snapshot.timeline) == 30
+
+
+def test_rollback_de_snapshot_invalido(tmp_path, costs_single_period):
+    """Payload inválido não deixa registros legados ou serviços órfãos."""
+    from pydantic import ValidationError
+    path = tmp_path / 'rollback.db'
+    analysis = analyze_costs(costs_single_period)
+    analysis['total_cost'] = float('nan')
+    with pytest.raises(ValidationError):
+        save_run(costs_single_period, analysis, db_path=path)
+    with sqlite3.connect(path) as conn:
+        assert conn.execute('SELECT COUNT(*) FROM runs').fetchone()[0] == 0
+        assert conn.execute('SELECT COUNT(*) FROM service_costs').fetchone()[0] == 0
+
+
+def test_erro_armazenamento_e_correlacao(tmp_path):
+    from fastapi.testclient import TestClient
+    from src.api.app import create_app, Settings
+    path = tmp_path / 'broken.db'
+    with TestClient(create_app(Settings(path, 'operator', 'credencial-sintetica-teste'))) as client:
+        path.unlink()
+        response = client.get('/api/v1/runs', auth=('operator', 'credencial-sintetica-teste'), headers={'X-Request-ID': 'texto-nao-confiavel'})
+        assert response.status_code == 503
+        assert response.json()['error']['code'] == 'STORAGE_UNAVAILABLE'
+        assert response.json()['error']['request_id'] == response.headers['x-request-id']
+        assert str(path) not in response.text
+        assert response.headers['x-request-id'] != 'texto-nao-confiavel'

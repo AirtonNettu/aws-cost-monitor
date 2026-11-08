@@ -7,6 +7,7 @@ em um bucket S3 configurado como Static Website.
 """
 
 import json
+import logging
 import os
 import sys
 
@@ -26,21 +27,21 @@ def lambda_handler(event, context):
     bucket_name = os.environ.get("S3_BUCKET_NAME")
     if not bucket_name:
         error_msg = "Variável de ambiente S3_BUCKET_NAME não configurada na Lambda."
-        print(f"[ERRO] {error_msg}")
+        logging.getLogger(__name__).error(json.dumps({"event": "configuration_error"}))
         return {"statusCode": 500, "body": json.dumps({"error": error_msg})}
 
     days = int(os.environ.get("COST_PERIOD_DAYS", "30"))
     raw_granularity = os.environ.get("COST_GRANULARITY", "DAILY").strip().upper()
     granularity = raw_granularity if raw_granularity in {"DAILY", "MONTHLY", "HOURLY"} else "DAILY"
 
-    print(f"Iniciando coleta de custos: {days} dias, granularidade={granularity}...")
+    logging.getLogger(__name__).info(json.dumps({"event": "collection_started"}))
 
     # 1. Coleta ------------------------------------------------------------
     try:
         costs = get_costs(period_days=days, granularity=granularity)
     except CostExplorerError as err:
-        print(f"[ERRO] Falha ao consultar o Cost Explorer: {err}")
-        return {"statusCode": 500, "body": json.dumps({"error": str(err)})}
+        logging.getLogger(__name__).error(json.dumps({"event": "collection_failed"}))
+        return {"statusCode": 500, "body": json.dumps({"error": "COLLECTION_FAILED"})}
 
     if not costs:
         print("[AVISO] Nenhum custo encontrado para o período.")
@@ -65,7 +66,7 @@ def lambda_handler(event, context):
     s3_client = boto3.client("s3")
     destination_key = os.environ.get("S3_OBJECT_KEY", "index.html")
 
-    print(f"Enviando {destination_key} para o bucket s3://{bucket_name}/...")
+    logging.getLogger(__name__).info(json.dumps({"event": "report_upload_started"}))
     try:
         s3_client.put_object(
             Bucket=bucket_name,
@@ -75,8 +76,8 @@ def lambda_handler(event, context):
         )
         print("Upload concluído com sucesso!")
     except Exception as exc:
-        print(f"[ERRO] Falha ao enviar para o S3: {exc}")
-        return {"statusCode": 500, "body": json.dumps({"error": str(exc)})}
+        logging.getLogger(__name__).error(json.dumps({"event": "report_upload_failed"}))
+        return {"statusCode": 500, "body": json.dumps({"error": "UPLOAD_FAILED"})}
 
     return {
         "statusCode": 200,

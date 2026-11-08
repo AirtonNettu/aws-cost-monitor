@@ -44,7 +44,7 @@ class Settings:
 def create_app(settings=None):
     """Cria a API com autenticação obrigatória e migração aditiva no startup."""
     settings = settings or Settings.from_environment()
-    if not settings.username or len(settings.password) < 16:
+    if not settings.username or ':' in settings.username or not settings.username.isascii() or not settings.password.isascii() or not 16 <= len(settings.password) <= 256:
         raise ValueError('Configure API_USERNAME e API_PASSWORD com pelo menos 16 caracteres na senha.')
 
     @asynccontextmanager
@@ -55,6 +55,12 @@ def create_app(settings=None):
     app = FastAPI(title='AWS Cost Monitor', version='0.2.0', docs_url=None,
                   redoc_url=None, openapi_url=None, lifespan=lifespan)
     security = HTTPBasic(auto_error=False)
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(message)s'))
+        logger.addHandler(handler)
+        logger.propagate = False
 
     def authenticate(credentials: Annotated[HTTPBasicCredentials | None, Depends(security)]):
         """Autoriza um único operador com acesso de leitura a todo o workspace."""

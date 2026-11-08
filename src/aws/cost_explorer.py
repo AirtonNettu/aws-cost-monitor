@@ -10,6 +10,7 @@ As credenciais são obtidas pelo boto3 a partir da configuração local
 from datetime import date, timedelta
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import (
     BotoCoreError,
     ClientError,
@@ -63,7 +64,12 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
     end_date = date.today()
     start_date = end_date - timedelta(days=period_days)
 
+    if not 1 <= period_days <= 366:
+        raise CostExplorerError('Janela de coleta inválida.')
+    if config.COST_METRIC != 'UnblendedCost':
+        raise CostExplorerError('Métrica não suportada pelo analisador.')
     results_by_time = []
+    seen_tokens = set()
     next_page_token = None
 
     if tag_key:
@@ -72,7 +78,8 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
         group_by = [{"Type": "DIMENSION", "Key": "SERVICE"}]
 
     try:
-        client = boto3.client("ce", region_name=config.AWS_REGION)
+        client = boto3.client("ce", region_name=config.AWS_REGION, config=Config(
+            connect_timeout=2, read_timeout=4, retries={"mode": "standard", "total_max_attempts": 2}))
         while True:
             params = {
                 "TimePeriod": {
@@ -92,6 +99,9 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
             next_page_token = response.get("NextPageToken")
             if not next_page_token:
                 break
+            if next_page_token in seen_tokens or len(seen_tokens) >= 19:
+                raise CostExplorerError('Limite de paginação atingido; nenhum snapshot parcial será salvo.')
+            seen_tokens.add(next_page_token)
     except (NoCredentialsError, PartialCredentialsError) as exc:
         raise CostExplorerError(
             "Credenciais da AWS não encontradas ou incompletas. "
