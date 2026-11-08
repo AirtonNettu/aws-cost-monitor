@@ -1,11 +1,10 @@
 """Consultas somente leitura; não inicializam nem modificam bancos existentes."""
 
-import json
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-from src.application.snapshots import Snapshot, RunSummary, History
+from src.application.snapshots import Snapshot, RunSummary, History, Filters
 
 
 @contextmanager
@@ -46,9 +45,10 @@ def get_snapshot(path, *, run_id=None, days=None, tag=None):
             ).fetchone()
         if row is None:
             raise LookupError("Snapshot não encontrado.")
-        payload = json.loads(row["payload"])
-        payload["available_filters"] = available(conn)
-        return Snapshot.model_validate(payload)
+        snapshot = Snapshot.model_validate_json(row["payload"])
+        return snapshot.model_copy(
+            update={"available_filters": Filters.model_validate(available(conn))}
+        )
 
 
 def list_snapshots(path, limit=50):
