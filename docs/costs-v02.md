@@ -4,9 +4,9 @@ Não há comprovação de custo zero. Nenhuma conta foi consultada ou recurso pr
 
 | Componente | Fatores que podem gerar cobrança |
 | --- | --- |
-| Cost Explorer | Cada chamada de GetCostAndUsage; páginas e retentativas multiplicam requisições |
+| Cost Explorer | Cada chamada de GetCostAndUsage; páginas e tentativas manuais também geram requisições |
 | Lambda | Invocações e duração × memória, inclusive falhas/retries; limites dependem da conta |
-| S3 | Armazenamento, versões não correntes, PUT (incluindo locks), leitura e transferência |
+| S3 | Armazenamento, versões, PUT condicionais de guarda/relatório, LIST limitado, GET/HEAD de reconciliação e transferência |
 | EventBridge | Tipo de evento/agenda e cotas aplicáveis; conferir tabela vigente |
 | CloudWatch Logs | Ingestão e armazenamento conforme retenção, não apenas número de funções |
 | Ollama/local | RAM, CPU, disco e energia; não é serviço de inferência sem custo material |
@@ -25,3 +25,9 @@ Fontes oficiais para consulta futura (não verificadas por chamadas AWS nesta se
 - https://aws.amazon.com/cloudwatch/pricing/
 - https://aws.amazon.com/eventbridge/pricing/
 - https://aws.amazon.com/free/
+
+## Estabilização do PR #8
+
+A configuração proposta aumenta o timeout máximo da Lambda para60s mantendo128MB. Isso amplia a duração potencialmente faturável em falhas; não é uma medição de uso nem estimativa monetária. SDK serverless usa uma tentativa por operação e até5páginas CE. Uma recuperação manual pode autorizar a segunda tentativa do dia, portanto pode haver mais chamadas CE; nunca é apresentada como gratuita. Reconciliação de upload ambíguo evita recolher custos quando o artefato já existe, mas também utiliza requisições S3.
+
+Relatórios diários são objetos distintos: versões não correntes sozinhas não limitariam seu crescimento. A stack agora expira objetos correntes reports/ após ReportRetentionDays (default90; opções30/60/90/180), versões antigas após30dias, guardas após7dias e versões antigas das guardas após30dias. Remove delete markers expirados. Retain protege bucket e grupo de logs na remoção; essa proteção não cancela cobrança nem remove recursos automaticamente. Reconciliar, desabilitar agenda e revisar recursos retidos antes de remoção futura autorizada.

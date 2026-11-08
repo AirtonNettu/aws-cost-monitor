@@ -2,6 +2,24 @@
 
 Branch exclusiva: `refactor/cloud-finops-v02`. Base remota auditada: `8aa5fd1`. Nenhum merge ou alteração direta na main; nenhum provisionamento, upload de artefatos ou deploy AWS.
 
+## Estabilização final do PR #8
+
+- **105 testes Python passaram**, com o aviso conhecido de TestClient/httpx; **38 testes frontend passaram**.
+- Contrato FastAPI/Zod, lint, build TypeScript/Vite, auditoria de segurança (0achados) e cfn-lint aprovados localmente.
+- Novos testes exercitam rollback antes de confirmar job, escritor SQLite ativo, token obsoleto, teto de recuperação, ETag concorrente, upload com resposta perdida, reconciliação após tentativa2, lease running, falta de orçamento, teto de5páginas sem publicação parcial, guarda com erro de rede, todas as leituras autenticadas, CORS restrito e JSON corrompido503.
+- A revisão independente encontrou dois defeitos reproduzidos: HEAD de chave ausente podia resultar403 com o IAM disponível; e coleta vazia retornava200 sem artefato. A consulta passou a LIST com prefixo exato/MaxKeys1, IAM correspondente e HEAD só de objeto listado. Sucesso agora exige artefato verificado. Ambos têm testes de regressão.
+- IAM revisado: S3 privado, TLS obrigatório, GetObject/PutObject nos prefixos da stack, ListBucket apenas reports/*/max-keys1, sem DeleteObject. Autenticação permanece de operador único; nenhuma credencial AWS chega à API/SPA.
+- CI anterior: [execução42528443435, commit5d4cf5c](https://github.com/AirtonNettu/aws-cost-monitor/actions/runs/42528443435), Success. Avisos de Actions Node20 motivaram atualização para Actions Node24 fixadas por SHA e runner Ubuntu24.04. Resultado dos commits novos: consultar [Checks do PR #8](https://github.com/AirtonNettu/aws-cost-monitor/pull/8/checks); não confundir a CI da base com a da estabilização.
+- Nenhuma conta AWS foi consultada. Nenhuma função AWS foi executada. Não houve deploy, criação de recursos ou merge.
+
+[Procedimento de recuperação](runbook-v02.md) e [ADR-002](adr/002-recovery-and-deadlines.md) descrevem confirmação de parada, migração aditiva, tokens/ETags, duas tentativas, expiração, reconciliação e risco residual. CLI auxiliar foi acrescentada em scripts/recover_collection.py. Pacote Lambda inclui o módulo de orçamento; foi gerado somente localmente.
+
+### Recomendação e riscos residuais
+
+As correções são candidatas à aprovação para o escopo local/portfólio e infraestrutura preparada, condicionadas à CI do HEAD e revisão humana. Não equivalem à aprovação de produção ou implantação. Validar IAM efetivo, runtime/SDK gerenciado, tempo real, custos, concorrência de versões e procedimento de recuperação em conta de teste futura explicitamente autorizada. Budget é cooperativo, não garante latência; guardas legadas sem identidade não são reabertas; SQLite exige locking confiável e pode bloquear outros escritores. A confirmação de processo parado é uma responsabilidade do operador, não prova automática. Metadados financeiros/segredos não são impressos pela recuperação.
+
+## Evidências anteriores à estabilização
+
 ## Resultados executados
 
 | Verificação | Resultado observado |
@@ -9,7 +27,7 @@ Branch exclusiva: `refactor/cloud-finops-v02`. Base remota auditada: `8aa5fd1`. 
 | Baseline Python | 59 testes passaram antes das alterações |
 | Baseline frontend | 37 testes passaram antes das alterações |
 | uv sync --frozen --dev | Dependências travadas instaladas, Python3.14.8 |
-| pytest -q final | **75 passaram**, 1 aviso de depreciação do TestClient/httpx |
+| pytest -q antes da estabilização | **75 passaram**, 1 aviso de depreciação do TestClient/httpx |
 | npm test | **38 passaram**, 8 arquivos |
 | npm run test:contract | Resposta HTTP do FastAPI/TestClient validada pelo Zod; SQLite temporário, comparação0% e créditos preservados |
 | npm run lint | Sem erros ou avisos ESLint |
@@ -40,13 +58,13 @@ O pytest apresenta aviso de futura substituição de httpx por httpx2 no TestCli
 ## Limitações e validações não realizadas
 
 - AWS real, IAM efetivo de conta, runtime Lambda, duração/memória, custos, Free Tier e remoção real não verificados.
-- A reserva S3 impede novas tentativas após falha; pode precisar de intervenção privada. Paginação/backoff pode exceder15s da Lambda.
+- A recuperação de reservas é manual e limitada; ver ADR-002. Lambda proposta60s, sem comprovação de duração em AWS; parsing e rede podem causar interrupção e exigir reconciliação.
 - API é local, de operador único, sem identidade multitenant, rate limiting ou hosting cloud. TLS/reverse proxy e controle de tentativas são pré-requisitos externos.
 - Registros legados permanecem, sem promoção automática para snapshots sem proveniência; exige importador futuro e backup.
 - Motor float preservado; Decimal e avaliações semânticas/estruturação da IA continuam planejados.
-- CI foi criado mas não executado no GitHub nesta validação.
+- CI da base5d4cf5c confirmada como Success na execução42528443435; a execução da estabilização deve ser consultada nos Checks do PR #8.
 - Automatização axe não comprova acessibilidade universal ou teste manual com leitor de tela.
-- Acesso Git remoto funciona; API GitHub bloqueada pela política de rede. Inclusão de api.github.com salva no rascunho do ambiente, ainda não aplicada/publicada. O push foi confirmado. A tentativa efetiva de gh pr create --draft falhou com Post https://api.github.com/graphql: Forbidden. O Draft PR não foi criado; sua descrição está em docs/draft-pr-v02.md. Abertura depende da aplicação da liberação de rede.
+- O PR #8 já existe em Draft na branch refactor/cloud-finops-v02. API GitHub continua bloqueada (Forbidden), mas a página pública permitiu consultar histórico e metadados da CI. Logs de Actions exigem login; nenhum PR novo foi criado. A atualização usa commits na mesma branch.
 
 ## Reprodução
 

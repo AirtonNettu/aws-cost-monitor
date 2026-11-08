@@ -9,7 +9,7 @@ uv run cfn-lint infra/serverless.yaml
 uv run python scripts/package_lambda.py
 ```
 
-Pacote em reports/collector.zip contém apenas módulos do coletor. Boto3 vem do runtime gerenciado; não inclui dependências pesadas do dashboard/API. Python 3.14/x86_64, 128MB e timeout15s são configuração proposta, não desempenho comprovado. Revisar em conta de teste antes de qualquer implantação real.
+Pacote em reports/collector.zip contém apenas módulos do coletor. Boto3 vem do runtime gerenciado; não inclui dependências pesadas do dashboard/API. Python 3.14/x86_64, 128MB e timeout60s são configuração proposta, não desempenho comprovado. Revisar em conta de teste antes de qualquer implantação real.
 
 ## Implantação futura por operador autorizado
 
@@ -27,15 +27,15 @@ aws cloudformation deploy --template-file infra/serverless.yaml \
   --parameter-overrides EnvironmentName=dev ArtifactBucket=SEU_BUCKET_PRIVADO ArtifactKey=collector.zip ScheduleState=DISABLED
 ```
 
-Sem credenciais no template. IAM coletor: ce:GetCostAndUsage (não aceita resource ARN específico), s3:PutObject apenas reports/* e locks/* no bucket da stack; logs apenas no grupo da função. Sem STS de identidade, IAM administrativo, leitura/exclusão geral S3 ou exposição pública.
+Sem credenciais no template. IAM coletor: ce:GetCostAndUsage (não aceita resource ARN específico), s3:PutObject/GetObject apenas reports/* e locks/*; ListBucket no bucket da stack somente para prefixo reports/* e max-keys<=1; logs apenas no grupo da função. Sem STS de identidade, IAM administrativo ou exclusão S3 ou exposição pública.
 
 ## Remover com proteção dos dados
 
 1. Desabilitar agenda e aguardar execução terminar.
 2. Identificar e guardar relatórios necessários por procedimento privado.
 3. Revisar Change Set/recursos e executar exclusão da stack somente com autorização.
-4. Bucket ReportsBucket tem DeletionPolicy/UpdateReplacePolicy Retain: permanece, com versões e potencial cobrança. A exclusão da stack não apaga esses dados.
+4. Bucket ReportsBucket e CollectorLogGroup têm DeletionPolicy/UpdateReplacePolicy Retain: permanece, com versões e potencial cobrança. A exclusão da stack não apaga esses dados nem os logs retidos.
 5. Para remover bucket retido, operador deve aprovar e excluir versões/delete markers e então bucket; não há script destrutivo automático.
 6. Bucket de artefatos não pertence à stack e tem ciclo de vida independente. Verificar cobranças remanescentes.
 
-Região/runtime disponível, IAM efetivo, duração e remoção real **não foram verificados**. Expiração de locks7dias não substitui auditoria; logs têm retenção configurável7/14/30/90dias, versões antigas dos relatórios30dias. Relatório corrente fica até política do operador.
+Região/runtime disponível, IAM efetivo, duração e remoção real **não foram verificados**. Expiração de locks7dias não substitui auditoria; logs têm retenção configurável7/14/30/90dias, versões antigas dos relatórios30dias. Relatório diário corrente expira conforme ReportRetentionDays (default90dias). Versões antigas de guardas expiram30dias; marcadores expirados são removidos. A função usa chave diária em reports/, não sobrescreve index.html. Ver ADR-002 e runbook para recuperação, rollout e reconciliação.

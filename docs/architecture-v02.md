@@ -53,7 +53,7 @@ CORS não é habilitado: desenvolvimento usa proxy Vite na mesma origem, produç
 
 ```mermaid
 flowchart LR
-  Schedule[EventBridge diário / desabilitado por padrão] --> Lambda[Lambda coletor / 128 MB / 15 s]
+  Schedule[EventBridge diário / desabilitado por padrão] --> Lambda[Lambda coletor / 128 MB / 60 s]
   Lambda --> Guard[S3 locks / escrita condicional diária]
   Lambda --> CE[Cost Explorer]
   Lambda --> Private[S3 privado / reports]
@@ -61,3 +61,5 @@ flowchart LR
 ```
 
 A stack não hospeda FastAPI, React ou SQLite. O pacote Lambda usa módulos puros Python e boto3 fornecido pelo runtime, sem Streamlit/Pydantic. Compatibilidade e IAM precisam de validação controlada futura em conta de teste. Ver [infraestrutura](infrastructure-v02.md), [ADR](adr/001-v02-boundaries.md), [custos](costs-v02.md).
+
+Estabilização: [ADR-002](adr/002-recovery-and-deadlines.md) define transação de conclusão local, recuperação manual limitada, escrita diária condicional no S3 e orçamento serverless. Guardas legadas sem identidade não são reabertas automaticamente.

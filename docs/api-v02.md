@@ -24,3 +24,5 @@ Erros: `{"error":{"code":"...","message":"...","request_id":"..."}}`.
 Toda resposta inclui X-Request-ID, Cache-Control:no-store e X-Content-Type-Options:nosniff. Correlation ID externo precisa ser UUID, senão um novo é gerado. Logs não registram Authorization, query string, corpo, conta ou custo. Timeout do cliente 15s; SQLite 5s; sem polling, retry HTTP ou coleta por GET.
 
 Teste de interoperabilidade: `npm run test:contract` em frontend usa TestClient real, SQLite temporário, dados sintéticos e Zod. E2E de navegador valida separadamente o servidor Uvicorn com proxy Vite.
+
+Estabilização PR #8: payload armazenado é validado como Snapshot antes de enriquecer filtros. JSON inválido, raiz não objeto e campos ausentes retornam503 INVALID_SNAPSHOT, sem conteúdo original em logs ou resposta. Autenticação e CORS não foram ampliados.

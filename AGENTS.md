@@ -21,7 +21,7 @@ Todos os agentes e assistentes que operam neste código devem seguir os papéis 
 - **Protocolo de Ação:**
   - Garantir que chamadas à API do AWS Cost Explorer sejam cacheadas ou agendadas (máximo 1x ao dia via EventBridge cron).
   - Impedir re-execuções desnecessárias da API do Cost Explorer que possam gerar cobrança conforme a tabela vigente.
-  - Em deploy Serverless, manter os artefatos estáticos no S3 com Website Hosting e runtime Lambda leve (< 128MB, timeout <= 15s).
+  - Em deploy Serverless, manter os artefatos privados no S3 e runtime Lambda leve (128MB, timeout de60s justificado no ADR-002, agenda desabilitada por padrão).
   - Alertar sobre recursos sem tag de alocação de custos (`Untagged Resources`).
 
 ### 3. 🧪 Quality Assurance & Architecture Reviewer (Agente de Revisão e Qualidade)

@@ -14,3 +14,5 @@ Status: adotada para esta entrega, conforme escopo autorizado no roadmap.
 ## Consequências
 
 Uma credencial autoriza todos os snapshots do workspace, portanto só um operador deve usar esta versão. Não publicar o servidor de desenvolvimento. Atualizar a página exige novo login. Filtros só anunciam snapshots realmente persistidos. Dados ausentes resultam em 404/503, nunca em coleta ou mock silencioso.
+
+Estabilização complementar: ver ADR-002 para recuperação explícita, timeout60s, artefatos diários e permissões de reconciliação. O modelo local de operador único permanece inalterado.
