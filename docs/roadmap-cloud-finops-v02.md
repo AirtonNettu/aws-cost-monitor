@@ -1,6 +1,6 @@
 # Plano de evolução — AWS Cost Monitor v0.2
 
-Status: **planejamento; implementação não iniciada**.
+Status: **D0–D4 implementados/documentados e validados localmente; abertura de Draft PR bloqueada por rede. AWS real não implantada. Evidências em validation-v02.md.**
 
 ## Objetivo
 Evoluir a solução existente de análise de custos AWS para uma aplicação FinOps verificável, segura e bem documentada, preservando as funções atuais e evitando alterações diretas na branch main.
@@ -8,7 +8,7 @@ Evoluir a solução existente de análise de custos AWS para uma aplicação Fin
 ## Diagnóstico inicial (documentação existente)
 - Motor Python com Boto3/Cost Explorer, regras determinísticas FinOps, SQLite, relatórios e cliente Ollama opcional.
 - Interface Streamlit existente e frontend React/TypeScript com dados simulados.
-- FastAPI e integração do frontend com dados reais ainda planejados.
+- FastAPI e integração HTTP local implementados nesta branch; dados de demonstração sintéticos identificados.
 - Implantação serverless documentada; execução em conta AWS e custos reais não verificados.
 - Testes descritos no README; resultados atuais não executados nesta auditoria.
 

@@ -40,4 +40,4 @@ Nenhum cliente vai te mandar a senha da AWS dele. A forma correta e segura de co
 - **Banco de Dados Multi-Tenant:** PostgreSQL (armazenando ID da conta AWS, Role ARN e histórico).
 - **Assinatura & Cobrança:** Integração via Stripe Billing ou Asaas (PIX / Cartão recorrente).
 
-Com apenas **15 clientes no plano Pro**, você tem uma receita recorrente de **R$ 2.955/mês** com custo de infraestrutura quase nulo!
+Com apenas **15 clientes no plano Pro**, você tem uma receita recorrente de **R$ 2.955/mês** com custos de infraestrutura que precisam ser medidos.

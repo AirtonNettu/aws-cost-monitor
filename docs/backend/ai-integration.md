@@ -1,3 +1,5 @@
+> Referência histórica anterior à implementação v0.2. O estado atual e eventuais divergências estão em [arquitetura v0.2](../architecture-v02.md) e [API implementada](../api-v02.md). Propostas de IA estruturada continuam planejadas.
+
 # Engenharia de IA — Ollama local, avaliação e robustez
 
 **Status:** desenho técnico; integração inicial já existe em `src/ai/llama_client.py`, mas é textual, síncrona e ainda não exposta pelo FastAPI.

@@ -1,3 +1,5 @@
+> Referência histórica anterior à implementação v0.2. O estado atual e eventuais divergências estão em [arquitetura v0.2](../architecture-v02.md) e [API implementada](../api-v02.md). Propostas de IA estruturada continuam planejadas.
+
 # Arquitetura proposta — FastAPI e AI Application Engineering
 
 **Status:** proposta; não é descrição de componentes já implantados.

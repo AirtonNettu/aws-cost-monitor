@@ -1,3 +1,5 @@
+> Referência histórica anterior à implementação v0.2. O estado atual e eventuais divergências estão em [arquitetura v0.2](../architecture-v02.md) e [API implementada](../api-v02.md). Propostas de IA estruturada continuam planejadas.
+
 # Contratos HTTP FastAPI — especificação proposta
 
 **Fonte do consumidor:** `frontend/src/api/contracts.ts` e `docs/frontend/api-contract.md`. **Nenhum endpoint está implementado nesta etapa.** Contratos serão testados contra Zod antes de integração.

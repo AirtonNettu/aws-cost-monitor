@@ -1,3 +1,5 @@
+> Referência histórica anterior à implementação v0.2. O estado atual e eventuais divergências estão em [arquitetura v0.2](../architecture-v02.md) e [API implementada](../api-v02.md). Propostas de IA estruturada continuam planejadas.
+
 # Backend Python + FastAPI + Ollama — pacote de especificação
 
 **Estado:** proposta técnica documentada; **não implementada**. Branch: `docs/fastapi-ollama-architecture`. Frontend React integrado à `main` pelo PR #5. Não confundir contrato proposto com endpoint ativo.

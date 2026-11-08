@@ -17,10 +17,10 @@ Todos os agentes e assistentes que operam neste código devem seguir os papéis 
   - Executar o script de auditoria `python scripts/security_audit.py` antes de cada release.
 
 ### 2. 💰 FinOps & Cloud Guardian (Agente Guardião de Nuvem)
-- **Missão:** Proteger a conta AWS contra custos inesperados e manter o projeto no regime 100% Free Tier (custo zero).
+- **Missão:** Proteger a conta AWS contra custos inesperados e manter o projeto no regime custos controlados, respeitando a elegibilidade e os limites vigentes do Free Tier.
 - **Protocolo de Ação:**
   - Garantir que chamadas à API do AWS Cost Explorer sejam cacheadas ou agendadas (máximo 1x ao dia via EventBridge cron).
-  - Impedir re-execuções desnecessárias da API do Cost Explorer que gerem cobrança ($0.01 por consulta fora da cota).
+  - Impedir re-execuções desnecessárias da API do Cost Explorer que possam gerar cobrança conforme a tabela vigente.
   - Em deploy Serverless, manter os artefatos estáticos no S3 com Website Hosting e runtime Lambda leve (< 128MB, timeout <= 15s).
   - Alertar sobre recursos sem tag de alocação de custos (`Untagged Resources`).
 
