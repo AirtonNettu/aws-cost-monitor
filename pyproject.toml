@@ -11,13 +11,18 @@ keywords = ["aws", "finops", "cost-explorer", "cost-management", "python", "boto
 requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.43.104",
+    "fastapi>=0.162.2",
+    "pydantic>=2.14.3",
     "python-dotenv>=1.2.3",
     "requests>=2.32.0",
     "streamlit>=1.65.0",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
 dev = [
+    "cfn-lint>=1.60.0",
+    "httpx>=0.28.1",
     "pytest>=8.0.0",
 ]
 

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { ApiSession } from './app/ApiSession'
 import { App } from './app/App'
 import { createDataClient } from './api/client'
 import './styles.css'
@@ -11,7 +12,7 @@ createDataClient()
     root.render(
       <StrictMode>
         <BrowserRouter>
-          <App client={client} />
+          {client.mode === 'api' ? <ApiSession base={import.meta.env.VITE_API_BASE_URL ?? '/api/v1'} /> : <App client={client} />}
         </BrowserRouter>
       </StrictMode>,
     ),

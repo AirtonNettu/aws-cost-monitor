@@ -18,6 +18,8 @@ def _get_connection(db_path=None):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
+    conn.execute('PRAGMA foreign_keys = ON')
+    conn.execute('PRAGMA busy_timeout = 5000')
     return conn
 
 
@@ -49,6 +51,14 @@ def init_db(db_path=None):
                 FOREIGN KEY (run_id) REFERENCES runs (id) ON DELETE CASCADE
             )
         """)
+        conn.execute("""CREATE TABLE IF NOT EXISTS snapshots (
+            run_id INTEGER PRIMARY KEY REFERENCES runs(id) ON DELETE CASCADE,
+            period_days INTEGER NOT NULL, tag TEXT, source TEXT NOT NULL,
+            collected_at TEXT NOT NULL, payload TEXT NOT NULL)""")
+        conn.execute("CREATE INDEX IF NOT EXISTS snapshots_filters ON snapshots(period_days, tag, collected_at)")
+        conn.execute("""CREATE TABLE IF NOT EXISTS collection_jobs (
+            job_key TEXT PRIMARY KEY, status TEXT NOT NULL, started_at TEXT NOT NULL,
+            finished_at TEXT, error_code TEXT)""")
         conn.commit()
 
 
@@ -59,6 +69,7 @@ def save_run(
     ai_interpretation=None,
     alerts=None,
     db_path=None,
+    *, source='aws', tag=None, collected_at=None,
 ):
     """Grava o snapshot de uma execução no banco de dados SQLite.
 
@@ -121,6 +132,18 @@ def save_run(
                 service_records,
             )
 
+        if costs:
+            from src.application.snapshots import build_snapshot, Snapshot
+            previous_row = conn.execute(
+                "SELECT payload FROM snapshots WHERE tag IS ? AND source=? ORDER BY collected_at DESC, run_id DESC LIMIT 1",
+                (tag, source),
+            ).fetchone()
+            previous = Snapshot.model_validate_json(previous_row['payload']) if previous_row else None
+            snapshot = build_snapshot(run_id, costs, analysis, ai_interpretation,
+                source=source, tag=tag, collected_at=collected_at, previous=previous)
+            conn.execute("INSERT INTO snapshots VALUES (?, ?, ?, ?, ?, ?)", (
+                run_id, (snapshot.period.end - snapshot.period.start).days, tag, source,
+                snapshot.collected_at.isoformat(), snapshot.model_dump_json()))
         conn.commit()
         return run_id
 
