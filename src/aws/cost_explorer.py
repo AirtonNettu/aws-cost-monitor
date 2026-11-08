@@ -7,7 +7,7 @@ As credenciais são obtidas pelo boto3 a partir da configuração local
 (AWS CLI / variáveis de ambiente). Nenhuma chave é lida ou guardada aqui.
 """
 
-from datetime import date, timedelta
+from datetime import UTC, datetime, timedelta
 
 import boto3
 from botocore.config import Config
@@ -33,6 +33,7 @@ def get_costs(
     sdk_config=None,
     max_pages=20,
     before_page=None,
+    end_date=None,
 ):
     """Consulta o AWS Cost Explorer e retorna os custos agrupados por serviço ou tag.
 
@@ -47,6 +48,11 @@ def get_costs(
         Chave da Cost Allocation Tag da AWS (ex: "Environment", "Project").
         Se fornecido, agrupa custos pelos valores dessa tag em vez de serviços.
         Usa ``config.COST_TAG_KEY`` se None.
+
+    end_date : date | None
+        Fim exclusivo em UTC. O coordenador informa o dia da reserva para
+        preservar a janela se a execução atravessar a meia-noite. Sem argumento,
+        usa o dia UTC atual; Start é inclusivo e recua ``period_days`` dias.
 
     Retorno
     -------
@@ -71,7 +77,8 @@ def get_costs(
 
     if not 1 <= max_pages <= 20:
         raise CostExplorerError("Limite de páginas inválido.")
-    end_date = date.today()
+    # Start inclusivo, End exclusivo; o dia corrente UTC permanece incompleto.
+    end_date = end_date or datetime.now(UTC).date()
     start_date = end_date - timedelta(days=period_days)
 
     if not 1 <= period_days <= 366:

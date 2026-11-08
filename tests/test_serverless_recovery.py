@@ -1,13 +1,14 @@
 """S3 em memória reproduz CAS, escrita ambígua e recuperação sem conta AWS."""
 
-from datetime import timedelta
 import hashlib
 import io
 import json
+from datetime import UTC, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
 from botocore.exceptions import ClientError, ReadTimeoutError
+
 from src.operations import serverless
 
 
@@ -291,3 +292,34 @@ def test_coleta_vazia_nao_confirma_publicacao_inexistente(storage):
     )
     assert guard["state"] == "failed"
     assert storage.report_writes == 0
+
+
+def test_handler_legado_nao_contorna_reserva(storage, costs_single_period):
+    """Ambos os nomes públicos compartilham a mesma reserva e publicação."""
+    from lambda_function import lambda_handler as old_handler
+
+    with (
+        patch.object(serverless.boto3, "client", return_value=storage),
+        patch("lambda_function.get_costs", return_value=costs_single_period) as collect,
+    ):
+        assert old_handler({}, None)["statusCode"] == 200
+        assert serverless.lambda_handler({}, None)["statusCode"] == 200
+        assert old_handler({}, None)["statusCode"] == 200
+        assert collect.call_count == 1
+        assert storage.report_writes == 1
+
+
+def test_reserva_mantem_periodo_ao_atravessar_meia_noite(storage, costs_single_period):
+    """O dia capturado na entrada governa a guarda, o relatório e a consulta."""
+    from datetime import datetime
+
+    start = datetime(2026, 12, 31, 23, 59, 59, tzinfo=UTC)
+    with (
+        patch.object(serverless, "_now", return_value=start),
+        patch.object(serverless.boto3, "client", return_value=storage),
+        patch("lambda_function.get_costs", return_value=costs_single_period) as collect,
+    ):
+        assert serverless.lambda_handler({}, None)["statusCode"] == 200
+        assert collect.call_args.kwargs["end_date"] == start.date()
+        assert "locks/2026-12-31.json" in storage.objects
+        assert "reports/2026-12-31.html" in storage.objects

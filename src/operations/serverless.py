@@ -1,15 +1,16 @@
 """Coordena estados da guarda diária e publica um artefato privado idempotente."""
 
-from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import logging
 import os
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+
 from lambda_function import run_report as run_legacy
 from src import config
 from src.operations.budget import Budget, BudgetExceeded
@@ -29,7 +30,7 @@ class RecoveryBlocked(Exception):
 
 
 def _now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _code(error):
@@ -200,6 +201,7 @@ def lambda_handler(event, context):
                 put_options={"IfNoneMatch": "*", "Metadata": {"scope-hash": scope}},
                 sdk_config=SDK_CONFIG,
                 max_pages=5,
+                end_date=now.date(),
                 before_call=lambda: budget.require(12),
             )
             status = result["statusCode"]

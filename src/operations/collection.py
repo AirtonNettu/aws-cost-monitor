@@ -1,17 +1,17 @@
 """Reserva diária durável, conclusão atômica e recuperação administrativa limitada."""
 
-from contextlib import closing, contextmanager
-from datetime import datetime, timezone
 import json
 import logging
 import sqlite3
+from contextlib import closing, contextmanager
+from datetime import UTC, date, datetime
 from uuid import uuid4
 
 from src import config
 from src.analysis.cost_analyzer import analyze_costs
 from src.analysis.finops_rules import generate_alerts
 from src.aws.cost_explorer import get_costs
-from src.database.repository import init_db, _get_connection, save_run
+from src.database.repository import _get_connection, init_db, save_run
 
 logger = logging.getLogger("cost_monitor.collection")
 logger.setLevel(logging.INFO)
@@ -46,7 +46,7 @@ def transaction(path):
 
 
 def _now():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _event(event, attempt):
@@ -58,7 +58,7 @@ def inspect_job(db_path):
     """Mostra somente metadados operacionais da reserva do dia UTC atual."""
     from src.database.snapshots import connection
 
-    key = datetime.now(timezone.utc).date().isoformat()
+    key = datetime.now(UTC).date().isoformat()
     with connection(db_path) as conn:
         row = conn.execute(
             "SELECT job_key,status,attempts,attempt_token,started_at,finished_at,error_code,run_id FROM collection_jobs WHERE job_key=?",
@@ -83,6 +83,7 @@ def _execute(db_path, key, token):
                 period_days=scope["days"],
                 granularity="DAILY",
                 tag_key=scope["tag"] or "",
+                end_date=date.fromisoformat(key),
             )
             if not costs:
                 raise ValueError("Coleta sem períodos para persistir.")
@@ -117,7 +118,7 @@ def collect_once(db_path, *, days=30, tag=None):
     tag = config.COST_TAG_KEY if tag is None else tag
     scope = json.dumps({"days": days, "tag": tag or None}, sort_keys=True)
     init_db(db_path)
-    key = datetime.now(timezone.utc).date().isoformat()
+    key = datetime.now(UTC).date().isoformat()
     token = str(uuid4())
     with transaction(db_path) as conn:
         row = conn.execute(
@@ -143,7 +144,7 @@ def recover_once(db_path, *, expected_token, confirm_stopped=False):
         raise CollectionBlocked(
             "Confirme a parada do processo e informe o token observado."
         )
-    key = datetime.now(timezone.utc).date().isoformat()
+    key = datetime.now(UTC).date().isoformat()
     token = str(uuid4())
     with transaction(db_path) as conn:
         row = conn.execute(

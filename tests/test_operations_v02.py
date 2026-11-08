@@ -100,7 +100,7 @@ def test_coleta_preserva_tag_configurada(tmp_path, costs_single_period, monkeypa
 
 def test_upload_serverless_com_timeout(costs_single_period):
     """Upload não pode depender dos longos timeouts padrão do SDK."""
-    from lambda_function import lambda_handler
+    from lambda_function import run_report as lambda_handler
 
     with (
         patch.dict("os.environ", {"S3_BUCKET_NAME": "bucket-sintetico"}),

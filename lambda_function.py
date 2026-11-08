@@ -1,9 +1,7 @@
-"""Handler para AWS Lambda do AWS Cost Monitor.
+"""Compatibilidade de importação e geração interna do relatório privado.
 
-Executado automaticamente pelo Amazon EventBridge (ex: 1x ao dia).
-Coleta os custos no AWS Cost Explorer, calcula métricas de FinOps,
-gera o relatório HTML interativo com Chart.js e publica como index.html
-em um bucket S3 configurado como Static Website.
+Ambos os handlers públicos usam o coordenador diário. ``run_report`` é um
+helper interno; não deve ser configurado como handler da infraestrutura.
 """
 
 import json
@@ -16,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import boto3
 from botocore.config import Config
-from src import config
+
 from src.analysis.cost_analyzer import analyze_costs, compare_periods
 from src.analysis.finops_rules import generate_alerts
 from src.aws.cost_explorer import CostExplorerError, get_costs
@@ -24,8 +22,10 @@ from src.reports.report_generator import build_report_html
 
 
 def lambda_handler(event, context):
-    """Preserva o ponto de entrada legado; a stack usa o coordenador diário."""
-    return run_report(event, context)
+    """Encaminha configurações antigas ao mesmo coordenador seguro da stack."""
+    from src.operations.serverless import lambda_handler as coordinated_handler
+
+    return coordinated_handler(event, context)
 
 
 def run_report(
@@ -38,8 +38,9 @@ def run_report(
     sdk_config=None,
     before_call=None,
     max_pages=20,
+    end_date=None,
 ):
-    """Ponto de entrada da função AWS Lambda."""
+    """Gera o relatório após a reserva; uso interno do coordenador diário."""
     bucket_name = os.environ.get("S3_BUCKET_NAME")
     if not bucket_name:
         error_msg = "Variável de ambiente S3_BUCKET_NAME não configurada na Lambda."
@@ -65,8 +66,10 @@ def run_report(
                 "before_page": before_call,
                 "max_pages": max_pages,
             }
+        if end_date is not None:
+            options["end_date"] = end_date
         costs = get_costs(period_days=days, granularity=granularity, **options)
-    except CostExplorerError as err:
+    except CostExplorerError:
         logging.getLogger(__name__).error(json.dumps({"event": "collection_failed"}))
         return {"statusCode": 500, "body": json.dumps({"error": "COLLECTION_FAILED"})}
 
@@ -92,7 +95,7 @@ def run_report(
         alerts=alerts,
     )
 
-    # 4. Upload para o S3 Website (index.html) ------------------------------
+    # 4. Upload privado para o S3 ------------------------------
     s3_client = client or boto3.client(
         "s3",
         config=sdk_config
@@ -118,7 +121,7 @@ def run_report(
         logging.getLogger(__name__).info(
             json.dumps({"event": "report_upload_succeeded"})
         )
-    except Exception as exc:
+    except Exception:
         logging.getLogger(__name__).error(json.dumps({"event": "report_upload_failed"}))
         return {"statusCode": 500, "body": json.dumps({"error": "UPLOAD_FAILED"})}
 
