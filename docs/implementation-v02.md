@@ -9,6 +9,7 @@ Execução direta autorizada pelo usuário; sem confirmações por arquivo.
 - [x] D3: template CloudFormation sem deploy; IAM mínimo, bucket privado, agenda desabilitada, retenção e validação cfn-lint.
 - [x] D4: documentação PT/EN, runbooks, custos, evidências e limites; testes completos e navegador contra API real.
 - [x] Revisão independente e correções reproduzidas/testadas; commits por responsabilidade.
-- [ ] Push final e Draft PR para main: PR depende da liberação de api.github.com no ambiente.
+- [x] Push final realizado na branch autorizada, sem merge.
+- [ ] Draft PR para main: tentativa gh pr create --draft bloqueada por Forbidden em api.github.com/graphql; descrição pronta em docs/draft-pr-v02.md.
 
 Interfaces: repository.save_run conserva assinatura e retorno; snapshot serviço lê SQLite por id/filtros; Snapshot Pydantic segue schema Zod; DataClient recebe Authorization em memória; coleta nunca é chamada por API. Todos os testes isolam AWS/Ollama.

@@ -46,7 +46,7 @@ O pytest apresenta aviso de futura substituição de httpx por httpx2 no TestCli
 - Motor float preservado; Decimal e avaliações semânticas/estruturação da IA continuam planejados.
 - CI foi criado mas não executado no GitHub nesta validação.
 - Automatização axe não comprova acessibilidade universal ou teste manual com leitor de tela.
-- Acesso Git remoto funciona; API GitHub bloqueada pela política de rede. Inclusão de api.github.com salva no rascunho do ambiente, ainda não aplicada/publicada. A abertura do Draft PR depende dessa liberação; não é um PR já criado.
+- Acesso Git remoto funciona; API GitHub bloqueada pela política de rede. Inclusão de api.github.com salva no rascunho do ambiente, ainda não aplicada/publicada. O push foi confirmado. A tentativa efetiva de gh pr create --draft falhou com Post https://api.github.com/graphql: Forbidden. O Draft PR não foi criado; sua descrição está em docs/draft-pr-v02.md. Abertura depende da aplicação da liberação de rede.
 
 ## Reprodução
 
