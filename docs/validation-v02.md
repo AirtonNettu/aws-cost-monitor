@@ -2,6 +2,37 @@
 
 Branch exclusiva: `refactor/cloud-finops-v02`. Base remota auditada: `8aa5fd1`. Nenhum merge ou alteração direta na main; nenhum provisionamento, upload de artefatos ou deploy AWS.
 
+## Hardening final — três achados da revisão
+
+Estado local verificado nesta entrega (substitui os totais anteriores):
+
+| Verificação | Resultado observado |
+| --- | --- |
+| `uv sync --frozen --dev` | Lockfile consistente, sem atualização de versões |
+| `pytest -q` | **116 passaram**, 1 aviso conhecido TestClient/httpx |
+| `npm test` | **38 passaram**, 8 arquivos |
+| `npm run test:contract` | FastAPI → Zod aprovado, dados sintéticos |
+| `npm run lint` / `npm run build` | ESLint e TypeScript/Vite aprovados |
+| `cfn-lint infra/serverless.yaml` | Exit0, sem diagnósticos |
+| `python scripts/security_audit.py` | 0 alertas, 0 achados |
+| `python scripts/package_lambda.py` e `--validate` | CRC, manifesto, allowlist e imports isolados aprovados |
+| Teste de reprodutibilidade | Duas gerações locais com SHA-256 idêntico; adulteração recusada |
+| `git diff --check` | Sem erros de whitespace |
+
+Artefato local: 2204 arquivos, 16.603.249 bytes comprimidos, 22.948.485 bytes descompactados. SHA-256 observado: `ac0d451cda9e38d7bc0609ef59141be7f73ee99ba69f2f2bf9b6ba20839d8364`. O ZIP não é versionado nem publicado. A CI agora também gera e valida o pacote; o checksum não é promessa de identidade entre compressores/versões distintos.
+
+Os testes novos reproduziram antes das correções o bypass do handler legado, ausência de referência UTC/fim explícito e falta de empacotamento verificável. Regressões cobrem ambos os handlers na mesma reserva (uma coleta/uma publicação), virada de ano, ano bissexto, consulta ancorada na reserva SQLite/S3, runtime/arquitetura/handler do template, ausência de dependências da API/dashboard no ZIP e recusa de conteúdo extra/adulterado. Os testes antigos da geração foram mantidos, apontando explicitamente ao helper interno `run_report`; não foram removidos nem suas asserções relaxadas.
+
+O contrato falhou inicialmente por cache uv em diretório somente leitura (`/home/agent/.cache/uv`). Reexecutado com `UV_CACHE_DIR=/workspace/.cache/uv`, passou; não foi defeito de contrato. A mesma configuração local foi usada para geração/testes Python. Nenhuma credencial ou conta AWS foi acessada.
+
+Lint Python suplementar com Ruff: módulos de datas/coleta, empacotador e novos testes passaram. A varredura ampliada também identificou **4 diagnósticos preexistentes** em `lambda_function.py`/`serverless.py` (BLE001 e S110, capturas genéricas de exceção e guarda de melhor esforço). A baseline foi reproduzida via `git show`. Permanecem registrados, sem `noqa` ou supressão: essas fronteiras preservam respostas sanitizadas e a reserva em falhas ambíguas; não se ampliou esta missão para redesenhar o tratamento de falhas. ESLint exigido pela CI passou. Este relatório não declara o Ruff ampliado aprovado.
+
+CI da estabilização anterior: [42530859877, d6173b9, Success](https://github.com/AirtonNettu/aws-cost-monitor/actions/runs/42530859877). O resultado da CI dos commits deste hardening será informado na entrega após o push; consultar [Checks do PR #8](https://github.com/AirtonNettu/aws-cost-monitor/pull/8/checks).
+
+### Riscos e parecer
+
+Os três achados foram corrigidos com regressões locais; ver [ADR-003](adr/003-lambda-entrypoints-utc-package.md) e [runbook](runbook-v02.md). A aprovação no escopo de laboratório/portfólio depende da CI do HEAD e da revisão humana. Runtime gerenciado, IAM efetivo, latência, custos e recuperação na AWS não foram executados nem comprovados. Guardas continuam exigindo confirmação humana de processo parado; manifesto é integridade, não assinatura. Não há aprovação de produção, merge ou deploy.
+
 ## Estabilização final do PR #8
 
 - **105 testes Python passaram**, com o aviso conhecido de TestClient/httpx; **38 testes frontend passaram**.
@@ -16,7 +47,7 @@ Branch exclusiva: `refactor/cloud-finops-v02`. Base remota auditada: `8aa5fd1`. 
 
 ### Recomendação e riscos residuais
 
-As correções são candidatas à aprovação para o escopo local/portfólio e infraestrutura preparada, condicionadas à CI do HEAD e revisão humana. Não equivalem à aprovação de produção ou implantação. Validar IAM efetivo, runtime/SDK gerenciado, tempo real, custos, concorrência de versões e procedimento de recuperação em conta de teste futura explicitamente autorizada. Budget é cooperativo, não garante latência; guardas legadas sem identidade não são reabertas; SQLite exige locking confiável e pode bloquear outros escritores. A confirmação de processo parado é uma responsabilidade do operador, não prova automática. Metadados financeiros/segredos não são impressos pela recuperação.
+As correções são candidatas à aprovação para o escopo local/portfólio e infraestrutura preparada, condicionadas à CI do HEAD e revisão humana. Não equivalem à aprovação de produção ou implantação. Validar IAM efetivo, runtime/SDK empacotado, tempo real, custos, concorrência de versões e procedimento de recuperação em conta de teste futura explicitamente autorizada. Budget é cooperativo, não garante latência; guardas legadas sem identidade não são reabertas; SQLite exige locking confiável e pode bloquear outros escritores. A confirmação de processo parado é uma responsabilidade do operador, não prova automática. Metadados financeiros/segredos não são impressos pela recuperação.
 
 ## Evidências anteriores à estabilização
 

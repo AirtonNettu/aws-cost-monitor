@@ -7,6 +7,7 @@
 - [Auditoria D0](audits/technical-audit-v02.md)
 - [ADR de fronteiras](adr/001-v02-boundaries.md)
 - [ADR de recuperação e orçamento](adr/002-recovery-and-deadlines.md)
+- [ADR de handlers, UTC e pacote](adr/003-lambda-entrypoints-utc-package.md)
 - [Runbook e troubleshooting](runbook-v02.md)
 - [CloudFormation: implantação e remoção](infrastructure-v02.md)
 - [Custos e limitações](costs-v02.md)

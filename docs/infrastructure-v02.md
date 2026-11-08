@@ -7,9 +7,16 @@ Estado: template validado estaticamente; **nenhum deploy, upload ou recurso AWS 
 ```bash
 uv run cfn-lint infra/serverless.yaml
 uv run python scripts/package_lambda.py
+uv run python scripts/package_lambda.py --validate
 ```
 
-Pacote em reports/collector.zip contém apenas módulos do coletor. Boto3 vem do runtime gerenciado; não inclui dependências pesadas do dashboard/API. Python 3.14/x86_64, 128MB e timeout60s são configuração proposta, não desempenho comprovado. Revisar em conta de teste antes de qualquer implantação real.
+Pacote em reports/collector.zip contém uma lista explícita de fontes do coletor e as oito dependências transitivas do grupo `lambda` do uv.lock: boto3, botocore, s3transfer, jmespath, python-dateutil, six, urllib3 e python-dotenv. O SDK é incluído para evitar variações do SDK gerenciado. Não inclui dashboard/API, `.env`, perfis AWS, bancos, relatórios financeiros ou arquivos locais. Nenhum pacote novo foi adicionado: o grupo apenas seleciona dependências existentes.
+
+Pré-requisitos de geração: uv no PATH, Python 3.14 e acesso ao índice/cache dos wheels travados. O instalador exige hashes e wheels para Linux x86_64/manylinux2014, compatíveis com o runtime proposto. Dependências nativas são recusadas; o conjunto atual é Python puro. A validação roda imports em processo Python3.14 `-I -S`, sem site-packages do projeto, com ambiente mínimo e diretório temporário. Não chama SDKs nem lê credenciais. Não substitui teste no runtime gerenciado da AWS.
+
+O ZIP normaliza ordem, timestamps e permissões e inclui `artifact-manifest.json` com SHA-256 dos arquivos e do lockfile. Dois builds são comparados byte a byte por SHA-256 em teste. A reprodutibilidade comprovada vale para os mesmos fontes/lockfile e ferramenta Python/uv/zlib; não se promete igualdade entre compressores diferentes. `--validate` confere CRC, manifesto, caminhos e imports, sem baixar dependências. O manifesto verifica integridade, não assinatura/autenticidade. Guarde o checksum impresso fora do artefato para comparar na revisão. Scripts de console, bytecode e metadados de instalação temporários não entram no pacote.
+
+A CI gera e valida o ZIP além de executar os testes de reprodutibilidade; não faz upload do artefato. Python 3.14/x86_64, 128MB e timeout60s são configuração proposta, não desempenho comprovado. Revisar em conta de teste antes de qualquer implantação real.
 
 ## Implantação futura por operador autorizado
 

@@ -121,7 +121,7 @@ Testes não usam AWS/Ollama reais. Há contrato FastAPI → Pydantic → JSON �
 
 ## Infraestrutura preparada e custos
 
-`infra/serverless.yaml` prepara coletor Lambda, EventBridge diário desabilitado, S3 privado criptografado, logs com retenção e IAM mínimo. Não hospeda API/SPA ou SQLite. `scripts/package_lambda.py` cria ZIP local sem upload/deploy.
+`infra/serverless.yaml` prepara coletor Lambda, EventBridge diário desabilitado, S3 privado criptografado, logs com retenção e IAM mínimo. Não hospeda API/SPA ou SQLite. `uv run python scripts/package_lambda.py` cria ZIP local com dependências travadas e manifesto SHA-256, sem upload/deploy. Valide com `uv run python scripts/package_lambda.py --validate`; consulte [empacotamento e limites](docs/infrastructure-v02.md). Os dois nomes públicos de handler passam pelo coordenador diário. As janelas do Cost Explorer usam Start inclusivo/End exclusivo em UTC, ancoradas no dia da reserva.
 
 [Implantar/remover futuramente](docs/infrastructure-v02.md). O bucket é retido após exclusão da stack; dados e cobrança podem permanecer. [Custos potenciais](docs/costs-v02.md): CE por requisição/página, Lambda, S3/versões/transferência, logs, eventos e CI. Free Tier depende da conta e das tabelas vigentes; desempenho e custo em AWS não foram medidos.
 
