@@ -60,7 +60,7 @@ def run_dashboard():
         tag_input = st.sidebar.text_input("Agrupar por Tag (Opcional, ex: Environment)", value="")
         enable_ai = st.sidebar.checkbox("Habilitar Análise de IA", value=config.AI_ENABLED)
 
-        tag_key = tag_input.strip() if tag_input.strip() else None
+        tag_key = tag_input.strip() if tag_input.strip() else config.COST_TAG_KEY
 
         if st.sidebar.button("🔄 Atualizar Consulta AWS", use_container_width=True):
             st.info("A consulta é reutilizada por até 24 horas para limitar chamadas ao Cost Explorer.")

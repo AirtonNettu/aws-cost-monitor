@@ -12,7 +12,11 @@ createDataClient()
     root.render(
       <StrictMode>
         <BrowserRouter>
-          {client.mode === 'api' ? <ApiSession base={import.meta.env.VITE_API_BASE_URL ?? '/api/v1'} /> : <App client={client} />}
+          {client.mode === 'api' ? (
+            <ApiSession base={import.meta.env.VITE_API_BASE_URL ?? '/api/v1'} />
+          ) : (
+            <App client={client} />
+          )}
         </BrowserRouter>
       </StrictMode>,
     ),

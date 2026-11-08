@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import boto3
+from botocore.config import Config
 from src import config
 from src.analysis.cost_analyzer import analyze_costs, compare_periods
 from src.analysis.finops_rules import generate_alerts
@@ -63,7 +64,7 @@ def lambda_handler(event, context):
     )
 
     # 4. Upload para o S3 Website (index.html) ------------------------------
-    s3_client = boto3.client("s3")
+    s3_client = boto3.client("s3", config=Config(connect_timeout=2, read_timeout=4, retries={"mode": "standard", "total_max_attempts": 2}))
     destination_key = os.environ.get("S3_OBJECT_KEY", "index.html")
 
     logging.getLogger(__name__).info(json.dumps({"event": "report_upload_started"}))
@@ -74,7 +75,7 @@ def lambda_handler(event, context):
             Body=html_content.encode("utf-8"),
             ContentType="text/html; charset=utf-8",
         )
-        print("Upload concluído com sucesso!")
+        logging.getLogger(__name__).info(json.dumps({"event": "report_upload_succeeded"}))
     except Exception as exc:
         logging.getLogger(__name__).error(json.dumps({"event": "report_upload_failed"}))
         return {"statusCode": 500, "body": json.dumps({"error": "UPLOAD_FAILED"})}

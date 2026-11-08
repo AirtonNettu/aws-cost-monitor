@@ -26,7 +26,12 @@ export async function fetchResponse(
     const url = `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
     const response = await (options.fetcher ?? fetch)(url, {
       signal: controller.signal,
-      headers: { Accept: 'application/json', ...(options.authorization ? { Authorization: options.authorization } : {}) },
+      headers: {
+        Accept: 'application/json',
+        ...(options.authorization
+          ? { Authorization: options.authorization }
+          : {}),
+      },
       credentials: 'same-origin',
     })
     if (!response.ok)

@@ -1,6 +1,6 @@
 [project]
 name = "aws-cost-monitor"
-version = "0.1.0"
+version = "0.2.0"
 description = "Ferramenta de monitoramento e análise de custos da AWS (FinOps) em Python, com camada de interpretação por IA desacoplada."
 readme = "README.md"
 license = { file = "LICENSE" }

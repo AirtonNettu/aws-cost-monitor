@@ -18,8 +18,8 @@ def _get_connection(db_path=None):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA foreign_keys = ON')
-    conn.execute('PRAGMA busy_timeout = 5000')
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
     return conn
 
 
@@ -55,13 +55,19 @@ def init_db(db_path=None):
             run_id INTEGER PRIMARY KEY REFERENCES runs(id) ON DELETE CASCADE,
             period_days INTEGER NOT NULL, tag TEXT, source TEXT NOT NULL,
             collected_at TEXT NOT NULL, payload TEXT NOT NULL)""")
-        conn.execute("CREATE INDEX IF NOT EXISTS snapshots_filters ON snapshots(period_days, tag, collected_at)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS snapshots_filters ON snapshots(period_days, tag, collected_at)"
+        )
         conn.execute("""CREATE TABLE IF NOT EXISTS collection_jobs (
             job_key TEXT PRIMARY KEY, status TEXT NOT NULL, started_at TEXT NOT NULL,
-            finished_at TEXT, error_code TEXT, run_id INTEGER)""")
-        columns = {row['name'] for row in conn.execute('PRAGMA table_info(collection_jobs)')}
-        if 'run_id' not in columns:
-            conn.execute('ALTER TABLE collection_jobs ADD COLUMN run_id INTEGER')
+            finished_at TEXT, error_code TEXT, run_id INTEGER, request_json TEXT)""")
+        columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(collection_jobs)")
+        }
+        if "run_id" not in columns:
+            conn.execute("ALTER TABLE collection_jobs ADD COLUMN run_id INTEGER")
+        if "request_json" not in columns:
+            conn.execute("ALTER TABLE collection_jobs ADD COLUMN request_json TEXT")
         conn.commit()
 
 
@@ -72,7 +78,10 @@ def save_run(
     ai_interpretation=None,
     alerts=None,
     db_path=None,
-    *, source='aws', tag=None, collected_at=None,
+    *,
+    source="aws",
+    tag=None,
+    collected_at=None,
 ):
     """Grava o snapshot de uma execução no banco de dados SQLite.
 
@@ -83,9 +92,15 @@ def save_run(
     """
     init_db(db_path)
     from src.application.snapshots import Summary
-    Summary(total_cost=analysis['total_cost'], largest_service=analysis['largest_service'],
-        largest_service_percentage=analysis['percentages'].get(analysis['largest_service']),
-        alert_count=len(alerts or []))
+
+    Summary(
+        total_cost=analysis["total_cost"],
+        largest_service=analysis["largest_service"],
+        largest_service_percentage=analysis["percentages"].get(
+            analysis["largest_service"]
+        ),
+        alert_count=len(alerts or []),
+    )
 
     period_start = costs[0]["start"] if costs else None
     period_end = costs[-1]["end"] if costs else None
@@ -141,16 +156,45 @@ def save_run(
 
         if costs:
             from src.application.snapshots import build_snapshot, Snapshot
+
             previous_row = conn.execute(
                 "SELECT payload FROM snapshots WHERE tag IS ? AND source=? AND period_days=? AND json_extract(payload, '$.period.end')=? ORDER BY collected_at DESC, run_id DESC LIMIT 1",
-                (tag, source, (datetime.fromisoformat(max(p['end'] for p in costs)) - datetime.fromisoformat(min(p['start'] for p in costs))).days, min(p['start'] for p in costs)),
+                (
+                    tag,
+                    source,
+                    (
+                        datetime.fromisoformat(max(p["end"] for p in costs))
+                        - datetime.fromisoformat(min(p["start"] for p in costs))
+                    ).days,
+                    min(p["start"] for p in costs),
+                ),
             ).fetchone()
-            previous = Snapshot.model_validate_json(previous_row['payload']) if previous_row else None
-            snapshot = build_snapshot(run_id, costs, analysis, ai_interpretation,
-                source=source, tag=tag, collected_at=collected_at, previous=previous)
-            conn.execute("INSERT INTO snapshots VALUES (?, ?, ?, ?, ?, ?)", (
-                run_id, (snapshot.period.end - snapshot.period.start).days, tag, source,
-                snapshot.collected_at.isoformat(), snapshot.model_dump_json()))
+            previous = (
+                Snapshot.model_validate_json(previous_row["payload"])
+                if previous_row
+                else None
+            )
+            snapshot = build_snapshot(
+                run_id,
+                costs,
+                analysis,
+                ai_interpretation,
+                source=source,
+                tag=tag,
+                collected_at=collected_at,
+                previous=previous,
+            )
+            conn.execute(
+                "INSERT INTO snapshots VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    run_id,
+                    (snapshot.period.end - snapshot.period.start).days,
+                    tag,
+                    source,
+                    snapshot.collected_at.isoformat(),
+                    snapshot.model_dump_json(),
+                ),
+            )
         conn.commit()
         return run_id
 
