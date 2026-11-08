@@ -83,6 +83,10 @@ dev = [
     { name = "httpx" },
     { name = "pytest" },
 ]
+lambda = [
+    { name = "boto3" },
+    { name = "python-dotenv" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -100,6 +104,10 @@ dev = [
     { name = "cfn-lint", specifier = ">=1.60.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pytest", specifier = ">=8.0.0" },
+]
+lambda = [
+    { name = "boto3", specifier = ">=1.43.104" },
+    { name = "python-dotenv", specifier = ">=1.2.3" },
 ]
 
 [[package]]

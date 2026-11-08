@@ -24,6 +24,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: uv sync --frozen --dev
       - run: uv run pytest -q
+      - run: uv run python scripts/package_lambda.py
+      - run: uv run python scripts/package_lambda.py --validate
       - run: uv run python scripts/security_audit.py
       - run: uv run cfn-lint infra/serverless.yaml
       - run: npm ci

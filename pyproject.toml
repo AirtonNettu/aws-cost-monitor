@@ -20,6 +20,10 @@ dependencies = [
 ]
 
 [dependency-groups]
+lambda = [
+    "boto3>=1.43.104",
+    "python-dotenv>=1.2.3",
+]
 dev = [
     "cfn-lint>=1.60.0",
     "httpx>=0.28.1",
