@@ -38,4 +38,4 @@ Este documento estabelece o **Roadmap Estratégico de Evolução** para transfor
 Cada evolução foi planejada para ser **aditiva e não-bloqueante**:
 - Se um canal de alerta (Slack) falhar, o relatório continua gerando.
 - Se a conta não for multi-account, o modo single-account continua rodando liso.
-- O custo de infraestrutura permanece **R$ 0,00 no AWS Free Tier**.
+- Custos e elegibilidade do Free Tier exigem verificação; não há garantia de gratuidade.

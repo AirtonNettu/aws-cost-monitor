@@ -15,6 +15,12 @@ from src.aws.cost_explorer import CostExplorerError, get_costs
 from src.database.repository import get_history, get_latest_run, get_run_services, save_run
 
 
+@st.cache_data(ttl=86400, show_spinner=False)
+def cached_costs(days, granularity, tag_key):
+    """Reutiliza a consulta por 24 horas; atualizar a tela não invalida a coleta."""
+    return get_costs(period_days=days, granularity=granularity, tag_key=tag_key)
+
+
 def format_money(val):
     return f"${val:,.2f}"
 
@@ -37,7 +43,7 @@ def run_dashboard():
     mode = st.sidebar.radio(
         "Fonte de Dados",
         ["Consulta AWS em Tempo Real", "Histórico Local (SQLite)"],
-        index=0,
+        index=1,
     )
 
     costs = None
@@ -54,15 +60,15 @@ def run_dashboard():
         tag_input = st.sidebar.text_input("Agrupar por Tag (Opcional, ex: Environment)", value="")
         enable_ai = st.sidebar.checkbox("Habilitar Análise de IA", value=config.AI_ENABLED)
 
-        tag_key = tag_input.strip() if tag_input.strip() else None
+        tag_key = tag_input.strip() if tag_input.strip() else config.COST_TAG_KEY
 
         if st.sidebar.button("🔄 Atualizar Consulta AWS", use_container_width=True):
-            st.cache_data.clear()
+            st.info("A consulta é reutilizada por até 24 horas para limitar chamadas ao Cost Explorer.")
 
         with st.spinner("Consultando AWS Cost Explorer..."):
             try:
-                costs = get_costs(
-                    period_days=days,
+                costs = cached_costs(
+                    days=days,
                     granularity=granularity,
                     tag_key=tag_key,
                 )
@@ -95,6 +101,7 @@ def run_dashboard():
                 comparison=comparison,
                 ai_interpretation=ai_interpretation,
                 alerts=alerts,
+                tag=tag_key,
             )
         except Exception:
             pass

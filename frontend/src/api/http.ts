@@ -4,9 +4,10 @@ interface Options {
   signal?: AbortSignal
   timeout?: number
   fetcher?: typeof fetch
+  authorization?: string
 }
 
-/** All requests are reads of saved snapshots; never triggers an AWS collection. */
+/** Consulta somente snapshots persistidos, sem iniciar coleta AWS. */
 export async function fetchResponse(
   base: string,
   path: string,
@@ -25,14 +26,19 @@ export async function fetchResponse(
     const url = `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
     const response = await (options.fetcher ?? fetch)(url, {
       signal: controller.signal,
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        ...(options.authorization
+          ? { Authorization: options.authorization }
+          : {}),
+      },
       credentials: 'same-origin',
     })
     if (!response.ok)
       throw new Error(
         `Não foi possível carregar os dados (HTTP ${response.status}).`,
       )
-    // Read body inside the timeout, including slow/streamed responses.
+    // Mantém o timeout durante a leitura completa do corpo da resposta.
     const body = await response.arrayBuffer()
     return new Response(body, {
       status: response.status,

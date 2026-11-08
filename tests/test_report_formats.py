@@ -39,7 +39,7 @@ def test_seletor_html(costs_single_period):
     assert "<!DOCTYPE html>" in texto
 
 
-def test_save_report_extensao_por_formato(tmp_path):
+def test_save_report_extensao_incluindo_html(tmp_path):
     p_txt = save_report("conteudo", directory=str(tmp_path), report_format="txt")
     p_json = save_report("{}", directory=str(tmp_path), report_format="json")
     p_md = save_report("# md", directory=str(tmp_path), report_format="markdown")

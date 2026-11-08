@@ -34,7 +34,7 @@ Definidos formalmente no arquivo [`AGENTS.md`](../AGENTS.md) e nos protocolos de
    - Valida que arquivos sensíveis permaneçam ignorados no `.gitignore`.
 
 2. **FinOps & Cloud Guardian (`.agents/rules/finops-guardian.md`):**
-   - Garante que a infraestrutura na AWS opere em custo zero (Free Tier).
+   - Garante que a infraestrutura na AWS opere com custos controlados, sem garantia de gratuidade.
    - Limita execuções do Cost Explorer a no máximo uma vez ao dia via EventBridge cron (`cron(0 11 * * ? *)`).
    - Impede custos surpresa de requisições web através de hospedagem estática no S3.
 

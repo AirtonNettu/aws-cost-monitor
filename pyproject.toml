@@ -1,6 +1,6 @@
 [project]
 name = "aws-cost-monitor"
-version = "0.1.0"
+version = "0.2.0"
 description = "Ferramenta de monitoramento e análise de custos da AWS (FinOps) em Python, com camada de interpretação por IA desacoplada."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -11,13 +11,22 @@ keywords = ["aws", "finops", "cost-explorer", "cost-management", "python", "boto
 requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.43.104",
+    "fastapi>=0.162.2",
+    "pydantic>=2.14.3",
     "python-dotenv>=1.2.3",
     "requests>=2.32.0",
     "streamlit>=1.65.0",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
+lambda = [
+    "boto3>=1.43.104",
+    "python-dotenv>=1.2.3",
+]
 dev = [
+    "cfn-lint>=1.60.0",
+    "httpx>=0.28.1",
     "pytest>=8.0.0",
 ]
 

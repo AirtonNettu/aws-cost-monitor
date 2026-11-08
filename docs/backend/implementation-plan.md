@@ -1,3 +1,5 @@
+> Referência histórica anterior à implementação v0.2. O estado atual e eventuais divergências estão em [arquitetura v0.2](../architecture-v02.md) e [API implementada](../api-v02.md). Propostas de IA estruturada continuam planejadas.
+
 # Plano de implementação e critérios de aceite
 
 **Status:** planejamento técnico, **não autorização para codificar**. Nenhum código FastAPI/Ollama foi criado nesta entrega.

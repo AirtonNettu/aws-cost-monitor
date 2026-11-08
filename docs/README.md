@@ -1,31 +1,21 @@
-# Documentação técnica — AWS Cost Monitor V1
+# Documentação — AWS Cost Monitor v0.2
 
-Documentação derivada do código real do repositório. Descreve como o sistema funciona hoje, sem funcionalidades planejadas.
+## Estado atual
 
-## Índice
+- [Arquitetura e requisitos](architecture-v02.md)
+- [API implementada](api-v02.md)
+- [Auditoria D0](audits/technical-audit-v02.md)
+- [ADR de fronteiras](adr/001-v02-boundaries.md)
+- [ADR de recuperação e orçamento](adr/002-recovery-and-deadlines.md)
+- [ADR de handlers, UTC e pacote](adr/003-lambda-entrypoints-utc-package.md)
+- [Runbook e troubleshooting](runbook-v02.md)
+- [CloudFormation: implantação e remoção](infrastructure-v02.md)
+- [Custos e limitações](costs-v02.md)
+- [Validação e evidências](validation-v02.md)
+- [Roadmap D0–D4](roadmap-cloud-finops-v02.md)
 
-- [architecture.md](architecture.md) — objetivo, componentes, fluxo, decisões arquiteturais.
-- [code-structure.md](code-structure.md) — estrutura de diretórios e detalhe por arquivo (inclui `finops_rules.py`).
-- [data-flow.md](data-flow.md) — fluxo de dados da AWS ao relatório (com diagramas).
-- [configuration.md](configuration.md) — variáveis de ambiente e defaults (inclui limiares de FinOps e `REPORT_FORMAT`).
-- [aws-permissions.md](aws-permissions.md) — serviços, APIs e permissões IAM.
-- [ai-integration.md](ai-integration.md) — camada Llama e tratamento de indisponibilidade.
-- [reports.md](reports.md) — formatos (txt/json/markdown), alertas de FinOps e tratamento de valores.
-- [error-handling.md](error-handling.md) — todos os caminhos de erro.
-- [testing.md](testing.md) — testes, mocks e cobertura real.
-- [setup.md](setup.md) — requisitos e instalação.
-- [development.md](development.md) — comandos de execução e sequência principal.
-- [troubleshooting.md](troubleshooting.md) — problemas reais e soluções.
+## Referências do motor Python
 
-## Regra arquitetural
+[Configuração](configuration.md), [módulos](code-structure.md), [análise](architecture.md), [relatórios](reports.md), [IA textual](ai-integration.md), [permissões AWS](aws-permissions.md). Documentos V1 e especificações backend/frontend preservam contexto histórico; quando divergem, a implementação v0.2 e seus testes prevalecem.
 
-**Python calcula. IA interpreta.** Os valores financeiros são produzidos exclusivamente por `src/analysis/cost_analyzer.py`. A camada de IA (`src/ai/llama_client.py`) apenas interpreta os números já calculados.
-
-## Frontend React e integração futura
-
-- [frontend/design.md](frontend/design.md) — auditoria inicial, decisões e critérios de aceite.
-- [frontend/implementation-plan.md](frontend/implementation-plan.md) — plano da entrega frontend.
-- [frontend/api-contract.md](frontend/api-contract.md) — contratos propostos para o FastAPI ainda não implementado.
-- [frontend/validation.md](frontend/validation.md) — validação, comandos e limites da entrega.
-
-O React funciona com mocks explícitos. Os documentos V1 acima preservam o histórico do Python; para a nova SPA e seu estado atual, consulte os documentos frontend.
+IA estruturada, anomalias estatísticas, previsões e multi-conta em evolution/ permanecem propostas. Não foram implantados recursos AWS nem comprovados preços, gratuidade ou SLA.

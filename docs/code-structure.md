@@ -66,7 +66,7 @@ Detalhes de cada variável em [configuration.md](configuration.md).
 - **Função `get_costs(period_days=None)`:**
   - **Entrada:** `period_days` opcional; usa `config.COST_PERIOD_DAYS` se `None`.
   - **boto3:** `boto3.client("ce", region_name=config.AWS_REGION)` e `client.get_cost_and_usage(...)`.
-  - **Período:** `start_date = date.today() - timedelta(days=period_days)`, `end_date = date.today()`, enviados em ISO.
+  - **Período:** `end_date = datetime.now(UTC).date()` (ou dia da reserva), `start_date = end_date - timedelta(days=period_days)`, enviados em ISO.
   - **Métrica/agrupamento:** `Metrics=[config.COST_METRIC]`, `GroupBy=[{"Type": "DIMENSION", "Key": "SERVICE"}]`, `Granularity=config.COST_GRANULARITY`.
   - **Exceções tratadas:** `NoCredentialsError`/`PartialCredentialsError`; `ClientError` (distingue `AccessDenied`/`AccessDeniedException`/`UnauthorizedOperation` dos demais); `BotoCoreError`. Todas viram `CostExplorerError` com `raise ... from exc`.
   - **Saída:** `list[dict]`, um item por período com `start`, `end`, `estimated`, `groups`.

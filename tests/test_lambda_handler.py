@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from lambda_function import lambda_handler
+from lambda_function import run_report as lambda_handler
 
 
 def test_lambda_handler_sem_bucket(monkeypatch):

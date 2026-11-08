@@ -1,3 +1,5 @@
+> Referência histórica anterior à implementação v0.2. O estado atual e eventuais divergências estão em [arquitetura v0.2](../architecture-v02.md) e [API implementada](../api-v02.md). Propostas de IA estruturada continuam planejadas.
+
 # Dashboard React — auditoria e decisões
 
 Data: 2026-10-20. Escopo autorizado: frontend e documentação; implementação e push em `feat/react-dashboard`, sem PR, merge ou deploy.

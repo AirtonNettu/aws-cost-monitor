@@ -670,7 +670,7 @@ def build_report_html(
     </div>
 
     <script>
-        const labels = {json.dumps(chart_labels, ensure_ascii=False)};
+        const labels = {json.dumps(chart_labels, ensure_ascii=False).replace('<', r'\u003c').replace('>', r'\u003e').replace('&', r'\u0026')};
         const dataValues = {json.dumps(chart_values)};
         const colors = [
             '#4f46e5', '#06b6d4', '#10b981', '#f59e0b',

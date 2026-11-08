@@ -3,10 +3,10 @@ trigger: always_on
 ---
 # FinOps Guardian Protocol — NETTO LABS
 
-Este protocolo assegura que a arquitetura do projeto permaneça rigorosamente dentro do Free Tier (custo zero) da AWS e evite despesas acidentais.
+Este protocolo assegura que a arquitetura do projeto mantenha custos controlados conforme preços e elegibilidade vigentes da AWS e evite despesas acidentais.
 
 ## 1. Controle de Consultas à API
-- A API do **AWS Cost Explorer (`ce:GetCostAndUsage`)** custa US$ 0.01 por consulta fora da cota gratuita.
+- A API do **AWS Cost Explorer (`ce:GetCostAndUsage`)** pode gerar cobrança por requisição conforme a tabela vigente.
 - Toda rotina em nuvem (AWS Lambda) deve rodar de forma agendada no máximo uma vez ao dia via EventBridge cron (`cron(0 11 * * ? *)`), e salvar o resultado estaticamente no S3 Website.
 - Em desenvolvimento local, encoraje o uso de snapshots SQLite locais (`data/costs.db`) para evitar consultas redundantes à AWS.
 

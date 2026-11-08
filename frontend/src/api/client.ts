@@ -1,7 +1,10 @@
 import { historySchema, snapshotSchema, type DataClient } from './contracts'
 import { fetchResponse, request } from './http'
 
-export function createApiClient(base: string): DataClient {
+export function createApiClient(
+  base: string,
+  authorization?: string,
+): DataClient {
   return {
     mode: 'api',
     getSnapshot: (filters, signal) => {
@@ -9,19 +12,21 @@ export function createApiClient(base: string): DataClient {
       if (filters.tag) query.set('tag', filters.tag)
       return request(base, `snapshots/latest?${query}`, snapshotSchema, {
         signal,
+        authorization,
       })
     },
     getHistory: (signal) =>
-      request(base, 'runs?limit=50', historySchema, { signal }),
+      request(base, 'runs?limit=50', historySchema, { signal, authorization }),
     getRun: (id, signal) =>
       request(base, `runs/${encodeURIComponent(id)}`, snapshotSchema, {
         signal,
+        authorization,
       }),
     exportReport: async (id, format, signal) => {
       const response = await fetchResponse(
         base,
         `runs/${encodeURIComponent(id)}/reports/${format}`,
-        { signal },
+        { signal, authorization },
       )
       return response.blob()
     },

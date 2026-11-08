@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Coletor FinOps diario com relatorios privados. Nao implanta API ou SPA.
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedPattern: '^[a-z][a-z0-9-]{1,20}$'
+  ArtifactBucket:
+    Type: String
+    Description: Bucket existente com o pacote ZIP revisado.
+  ArtifactKey:
+    Type: String
+    Description: Chave do pacote ZIP no bucket de artefatos.
+  ScheduleState:
+    Type: String
+    Default: DISABLED
+    AllowedValues: [DISABLED, ENABLED]
+  ReportRetentionDays:
+    Type: Number
+    Default: 90
+    AllowedValues: [30, 60, 90, 180]
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+    AllowedValues: [7, 14, 30, 90]
+Resources:
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: RetencaoDeRelatorios
+            Prefix: reports/
+            Status: Enabled
+            ExpirationInDays: !Ref ReportRetentionDays
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+          - Id: ReservasDiarias
+            Prefix: locks/
+            Status: Enabled
+            ExpirationInDays: 7
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+          - Id: MarcadoresVazios
+            Status: Enabled
+            ExpiredObjectDeleteMarker: true
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: aws-cost-monitor
+  TransportPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ReportsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt ReportsBucket.Arn
+              - !Sub '${ReportsBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+  CollectorLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/cost-monitor-${EnvironmentName}-collector'
+      RetentionInDays: !Ref LogRetentionDays
+  CollectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: FinOpsLeituraEPublicacaoPrivada
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ce:GetCostAndUsage
+                Resource: '*'
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  - !Sub '${ReportsBucket.Arn}/reports/*'
+                  - !Sub '${ReportsBucket.Arn}/locks/*'
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt ReportsBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix: 'reports/*'
+                  NumericLessThanEquals:
+                    s3:max-keys: '1'
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  - !Sub '${ReportsBucket.Arn}/locks/*'
+                  - !Sub '${ReportsBucket.Arn}/reports/*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt CollectorLogGroup.Arn
+  Collector:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'cost-monitor-${EnvironmentName}-collector'
+      Runtime: python3.14
+      Architectures: [x86_64]
+      Handler: src.operations.serverless.lambda_handler
+      Role: !GetAtt CollectorRole.Arn
+      MemorySize: 128
+      Timeout: 60
+      ReservedConcurrentExecutions: 1
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref ArtifactKey
+      LoggingConfig:
+        LogFormat: JSON
+        ApplicationLogLevel: INFO
+        SystemLogLevel: INFO
+        LogGroup: !Ref CollectorLogGroup
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref ReportsBucket
+          COST_PERIOD_DAYS: '30'
+          COST_GRANULARITY: DAILY
+          AI_ENABLED: 'false'
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  DailySchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Uma tentativa diaria UTC; desabilitada por padrao.
+      State: !Ref ScheduleState
+      ScheduleExpression: 'cron(0 11 * * ? *)'
+      Targets:
+        - Arn: !GetAtt Collector.Arn
+          Id: FinOpsCollector
+          RetryPolicy:
+            MaximumRetryAttempts: 0
+            MaximumEventAgeInSeconds: 60
+  SchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Collector
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DailySchedule.Arn
+      SourceAccount: !Ref AWS::AccountId
+  AsyncInvocation:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref Collector
+      Qualifier: '$LATEST'
+      MaximumRetryAttempts: 0
+      MaximumEventAgeInSeconds: 60
+Outputs:
+  PrivateReportsBucket:
+    Value: !Ref ReportsBucket
+  CollectorName:
+    Value: !Ref Collector
+  ScheduleName:
+    Value: !Ref DailySchedule

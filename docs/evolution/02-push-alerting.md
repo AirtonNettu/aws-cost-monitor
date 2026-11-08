@@ -4,7 +4,7 @@ Nesta fase, você transforma o monitor em um **guardião proativo**: em vez de o
 
 ---
 
-## 1. Canais Recomendados (Custo R$ 0,00)
+## 1. Canais propostos (preços e cotas sujeitos à verificação)
 
 1. **Discord Webhook:** Gratuito, mensagens com embeds coloridos, ideal para equipes ágeis.
 2. **Slack Incoming Webhook:** O padrão corporativo em 95% das empresas de tecnologia.

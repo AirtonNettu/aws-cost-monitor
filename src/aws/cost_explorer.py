@@ -7,9 +7,10 @@ As credenciais são obtidas pelo boto3 a partir da configuração local
 (AWS CLI / variáveis de ambiente). Nenhuma chave é lida ou guardada aqui.
 """
 
-from datetime import date, timedelta
+from datetime import UTC, datetime, timedelta
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import (
     BotoCoreError,
     ClientError,
@@ -24,7 +25,16 @@ class CostExplorerError(Exception):
     """Erro de alto nível na coleta de custos, com mensagem amigável."""
 
 
-def get_costs(period_days=None, granularity=None, tag_key=None):
+def get_costs(
+    period_days=None,
+    granularity=None,
+    tag_key=None,
+    *,
+    sdk_config=None,
+    max_pages=20,
+    before_page=None,
+    end_date=None,
+):
     """Consulta o AWS Cost Explorer e retorna os custos agrupados por serviço ou tag.
 
     Parâmetros
@@ -38,6 +48,11 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
         Chave da Cost Allocation Tag da AWS (ex: "Environment", "Project").
         Se fornecido, agrupa custos pelos valores dessa tag em vez de serviços.
         Usa ``config.COST_TAG_KEY`` se None.
+
+    end_date : date | None
+        Fim exclusivo em UTC. O coordenador informa o dia da reserva para
+        preservar a janela se a execução atravessar a meia-noite. Sem argumento,
+        usa o dia UTC atual; Start é inclusivo e recua ``period_days`` dias.
 
     Retorno
     -------
@@ -60,10 +75,18 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
     if tag_key is None:
         tag_key = config.COST_TAG_KEY
 
-    end_date = date.today()
+    if not 1 <= max_pages <= 20:
+        raise CostExplorerError("Limite de páginas inválido.")
+    # Start inclusivo, End exclusivo; o dia corrente UTC permanece incompleto.
+    end_date = end_date or datetime.now(UTC).date()
     start_date = end_date - timedelta(days=period_days)
 
+    if not 1 <= period_days <= 366:
+        raise CostExplorerError("Janela de coleta inválida.")
+    if config.COST_METRIC != "UnblendedCost":
+        raise CostExplorerError("Métrica não suportada pelo analisador.")
     results_by_time = []
+    seen_tokens = set()
     next_page_token = None
 
     if tag_key:
@@ -72,7 +95,16 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
         group_by = [{"Type": "DIMENSION", "Key": "SERVICE"}]
 
     try:
-        client = boto3.client("ce", region_name=config.AWS_REGION)
+        client = boto3.client(
+            "ce",
+            region_name=config.AWS_REGION,
+            config=sdk_config
+            or Config(
+                connect_timeout=2,
+                read_timeout=4,
+                retries={"mode": "standard", "total_max_attempts": 2},
+            ),
+        )
         while True:
             params = {
                 "TimePeriod": {
@@ -86,12 +118,19 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
             if next_page_token:
                 params["NextPageToken"] = next_page_token
 
+            if before_page is not None:
+                before_page()
             response = client.get_cost_and_usage(**params)
             results_by_time.extend(response.get("ResultsByTime", []))
 
             next_page_token = response.get("NextPageToken")
             if not next_page_token:
                 break
+            if next_page_token in seen_tokens or len(seen_tokens) >= max_pages - 1:
+                raise CostExplorerError(
+                    "Limite de paginação atingido; nenhum snapshot parcial será salvo."
+                )
+            seen_tokens.add(next_page_token)
     except (NoCredentialsError, PartialCredentialsError) as exc:
         raise CostExplorerError(
             "Credenciais da AWS não encontradas ou incompletas. "
@@ -108,9 +147,7 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
             f"O AWS Cost Explorer retornou um erro ({code}): {exc}"
         ) from exc
     except BotoCoreError as exc:
-        raise CostExplorerError(
-            f"Falha de comunicação com a AWS: {exc}"
-        ) from exc
+        raise CostExplorerError(f"Falha de comunicação com a AWS: {exc}") from exc
 
     # Consolida períodos e seus grupos preservando a ordem cronológica
     periods_map = {}
@@ -123,13 +160,17 @@ def get_costs(period_days=None, granularity=None, tag_key=None):
             raw_key = g["Keys"][0] if g.get("Keys") else "Desconhecido"
             if tag_key and "$" in raw_key:
                 t_name, t_val = raw_key.split("$", 1)
-                clean_name = f"{t_name}: {t_val}" if t_val.strip() else f"{t_name}: Untagged"
+                clean_name = (
+                    f"{t_name}: {t_val}" if t_val.strip() else f"{t_name}: Untagged"
+                )
             else:
                 clean_name = raw_key
-            normalized_groups.append({
-                "Keys": [clean_name],
-                "Metrics": g.get("Metrics", {}),
-            })
+            normalized_groups.append(
+                {
+                    "Keys": [clean_name],
+                    "Metrics": g.get("Metrics", {}),
+                }
+            )
 
         if key not in periods_map:
             periods_map[key] = {
