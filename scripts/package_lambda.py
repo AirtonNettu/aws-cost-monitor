@@ -10,6 +10,7 @@ files = [
     ROOT / "src/config.py",
     ROOT / "src/operations/__init__.py",
     ROOT / "src/operations/serverless.py",
+    ROOT / "src/operations/budget.py",
 ]
 for directory in ("analysis", "aws", "reports"):
     files.extend((ROOT / "src" / directory).glob("*.py"))

@@ -15,6 +15,10 @@ Parameters:
     Type: String
     Default: DISABLED
     AllowedValues: [DISABLED, ENABLED]
+  ReportRetentionDays:
+    Type: Number
+    Default: 90
+    AllowedValues: [30, 60, 90, 180]
   LogRetentionDays:
     Type: Number
     Default: 14
@@ -42,13 +46,20 @@ Resources:
       LifecycleConfiguration:
         Rules:
           - Id: RetencaoDeRelatorios
+            Prefix: reports/
             Status: Enabled
+            ExpirationInDays: !Ref ReportRetentionDays
             NoncurrentVersionExpiration:
               NoncurrentDays: 30
           - Id: ReservasDiarias
             Prefix: locks/
             Status: Enabled
             ExpirationInDays: 7
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+          - Id: MarcadoresVazios
+            Status: Enabled
+            ExpiredObjectDeleteMarker: true
       Tags:
         - Key: Environment
           Value: !Ref EnvironmentName
@@ -72,6 +83,8 @@ Resources:
                 aws:SecureTransport: 'false'
   CollectorLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       LogGroupName: !Sub '/aws/lambda/cost-monitor-${EnvironmentName}-collector'
       RetentionInDays: !Ref LogRetentionDays
@@ -99,6 +112,19 @@ Resources:
                   - !Sub '${ReportsBucket.Arn}/reports/*'
                   - !Sub '${ReportsBucket.Arn}/locks/*'
               - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt ReportsBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix: 'reports/*'
+                  NumericLessThanEquals:
+                    s3:max-keys: '1'
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  - !Sub '${ReportsBucket.Arn}/locks/*'
+                  - !Sub '${ReportsBucket.Arn}/reports/*'
+              - Effect: Allow
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -112,7 +138,7 @@ Resources:
       Handler: src.operations.serverless.lambda_handler
       Role: !GetAtt CollectorRole.Arn
       MemorySize: 128
-      Timeout: 15
+      Timeout: 60
       ReservedConcurrentExecutions: 1
       Code:
         S3Bucket: !Ref ArtifactBucket
@@ -125,7 +151,6 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref ReportsBucket
-          S3_OBJECT_KEY: reports/index.html
           COST_PERIOD_DAYS: '30'
           COST_GRANULARITY: DAILY
           AI_ENABLED: 'false'
