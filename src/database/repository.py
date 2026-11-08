@@ -5,6 +5,7 @@ análise de tendências históricas e visualização no dashboard sem depender
 de reconsultas à AWS.
 """
 
+from contextlib import closing, nullcontext
 import json
 import os
 import sqlite3
@@ -68,6 +69,12 @@ def init_db(db_path=None):
             conn.execute("ALTER TABLE collection_jobs ADD COLUMN run_id INTEGER")
         if "request_json" not in columns:
             conn.execute("ALTER TABLE collection_jobs ADD COLUMN request_json TEXT")
+        if "attempts" not in columns:
+            conn.execute(
+                "ALTER TABLE collection_jobs ADD COLUMN attempts INTEGER NOT NULL DEFAULT 1"
+            )
+        if "attempt_token" not in columns:
+            conn.execute("ALTER TABLE collection_jobs ADD COLUMN attempt_token TEXT")
         conn.commit()
 
 
@@ -82,6 +89,7 @@ def save_run(
     source="aws",
     tag=None,
     collected_at=None,
+    _connection=None,
 ):
     """Grava o snapshot de uma execução no banco de dados SQLite.
 
@@ -90,7 +98,21 @@ def save_run(
     int
         O ID da execução recém-inserida.
     """
-    init_db(db_path)
+    if _connection is None:
+        init_db(db_path)
+        with closing(_get_connection(db_path)) as conn, conn:
+            return save_run(
+                costs,
+                analysis,
+                comparison,
+                ai_interpretation,
+                alerts,
+                db_path,
+                source=source,
+                tag=tag,
+                collected_at=collected_at,
+                _connection=conn,
+            )
     from src.application.snapshots import Summary
 
     Summary(
@@ -110,7 +132,7 @@ def save_run(
     variation = comparison["variation"] if comparison else None
     alerts_json = json.dumps(alerts or [], ensure_ascii=False)
 
-    with _get_connection(db_path) as conn:
+    with nullcontext(_connection) as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
@@ -195,7 +217,6 @@ def save_run(
                     snapshot.model_dump_json(),
                 ),
             )
-        conn.commit()
         return run_id
 
 
