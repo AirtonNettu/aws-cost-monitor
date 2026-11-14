@@ -1,6 +1,7 @@
 import type { z } from 'zod'
 
 interface Options {
+  method?: string
   signal?: AbortSignal
   timeout?: number
   fetcher?: typeof fetch
@@ -24,6 +25,7 @@ export async function fetchResponse(
   try {
     const url = `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
     const response = await (options.fetcher ?? fetch)(url, {
+      method: options.method ?? 'GET',
       signal: controller.signal,
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',

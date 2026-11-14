@@ -4,7 +4,7 @@ import { ArrowRight, CalendarDays, CircleDot } from 'lucide-react'
 import { useApp, useSnapshot } from '../../app/context'
 import type { Snapshot } from '../../api/contracts'
 import { date, dateTime } from '../../lib/format'
-import { Metrics, Comparison } from '../../components/Metrics'
+import { Metrics, Comparison, BudgetIndicator } from '../../components/Metrics'
 import { ErrorState, Loading, PageHeading } from '../../components/States'
 import { ServiceTable } from '../../components/ServiceTable'
 import { ExportReport } from '../../components/ExportReport'
@@ -35,8 +35,7 @@ export function SnapshotMeta({ snapshot }: { snapshot: Snapshot }) {
     <div className="snapshot-meta">
       <span>
         <CalendarDays size={14} aria-hidden="true" />
-        {date(snapshot.period.start)} → {date(snapshot.period.end)}{' '}
-        <small>(fim exclusivo)</small>
+        {date(snapshot.period.start)} → {date(snapshot.period.end)}
       </span>
       <span>Coleta: {dateTime(snapshot.collected_at)} BRT</span>
       {snapshot.estimated && (
@@ -46,7 +45,7 @@ export function SnapshotMeta({ snapshot }: { snapshot: Snapshot }) {
         </span>
       )}
       {snapshot.source === 'mock' && (
-        <span className="badge">Snapshot ilustrativo</span>
+        <span className="badge">Modo Demo</span>
       )}
     </div>
   )
@@ -73,6 +72,7 @@ export function SnapshotContent({
       <SnapshotMeta snapshot={snapshot} />
       {(kind === 'overview' || kind === 'costs') && (
         <>
+          <BudgetIndicator snapshot={snapshot} />
           <Metrics snapshot={snapshot} />
           <Suspense fallback={<div className="skeleton chart-skeleton" />}>
             <Charts snapshot={snapshot} services={services} />

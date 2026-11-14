@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 from datetime import datetime
 from enum import IntEnum
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -346,6 +348,28 @@ def _snapshot(row: dict, db_path=None) -> Snapshot:
     )
 
 
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def verify_api_key(api_key: str | None = Security(api_key_header)) -> str | None:
+    """Valida a chave de API caso a variável de ambiente API_KEY esteja configurada."""
+    expected_key = os.environ.get("API_KEY")
+    if expected_key:
+        if not api_key or api_key != expected_key:
+            raise HTTPException(
+                status_code=401,
+                detail="Chave de API inválida ou ausente (header X-API-Key).",
+            )
+    return api_key
+
+
+class SyncResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    status: str
+    message: str
+    snapshot: Snapshot | None = None
+
+
 app = FastAPI(title="AWS Cost Monitor API", version="0.1.0")
 
 app.add_middleware(
@@ -353,13 +377,15 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
         "http://localhost:4173",
         "http://127.0.0.1:4173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "OPTIONS"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -369,7 +395,11 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/api/v1/snapshots/latest", response_model=Snapshot)
+@app.get(
+    "/api/v1/snapshots/latest",
+    response_model=Snapshot,
+    dependencies=[Depends(verify_api_key)],
+)
 def latest_snapshot(
     days: SnapshotDays = SnapshotDays.DAYS_30,
     tag: str | None = None,
@@ -384,7 +414,94 @@ def latest_snapshot(
     return _snapshot(row)
 
 
-@app.get("/api/v1/runs", response_model=HistoryResponse)
+@app.post(
+    "/api/v1/sync",
+    response_model=SyncResponse,
+    dependencies=[Depends(verify_api_key)],
+)
+def sync_aws_costs(
+    days: SnapshotDays = SnapshotDays.DAYS_30,
+    tag: str | None = None,
+):
+    """Sincroniza custos com a AWS (com proteção de cooldown e fallback seguro)."""
+    clean_tag = tag.strip() if tag and tag.strip() else None
+    latest = get_latest_snapshot(days=int(days), tag=clean_tag)
+
+    # Cooldown FinOps: Se temos snapshot criado há menos de 10 minutos, aproveita o cache
+    now = datetime.now()
+    if latest and latest.get("created_at"):
+        try:
+            created_dt = datetime.fromisoformat(
+                latest["created_at"].replace("Z", "+00:00")
+            ).replace(tzinfo=None)
+            diff_mins = (now - created_dt).total_seconds() / 60
+            if diff_mins < 10:
+                return SyncResponse(
+                    status="cached",
+                    message=f"Dados recentes já sincronizados ({int(diff_mins)} min atrás). Cooldown ativo para proteção de custos da API.",
+                    snapshot=_snapshot(latest),
+                )
+        except Exception:
+            pass
+
+    # Tenta coleta real via Boto3 / Cost Explorer
+    try:
+        from src.analysis.cost_analyzer import analyze_costs, compare_periods
+        from src.analysis.finops_rules import generate_alerts
+        from src.aws.cost_explorer import get_costs
+        from src.database.repository import save_run
+
+        costs = get_costs(days=int(days), tag_key=clean_tag)
+        analysis = analyze_costs(costs)
+        comparison = compare_periods(costs)
+
+        daily_costs = []
+        for period in costs:
+            day_total = sum(
+                float(g["Metrics"]["UnblendedCost"]["Amount"])
+                for g in period.get("groups", [])
+            )
+            daily_costs.append(day_total)
+
+        alerts = generate_alerts(analysis, comparison, daily_costs=daily_costs)
+
+        run_id = save_run(
+            total_cost=analysis["total_cost"],
+            services_data=analysis["positive_services"],
+            source="aws",
+            days=int(days),
+            tag=clean_tag,
+            estimated=True,
+            comparison_json=json.dumps(comparison) if comparison else None,
+            timeline_json=json.dumps(costs),
+            alerts_json=json.dumps(alerts) if alerts else None,
+        )
+
+        updated_row = get_latest_snapshot(days=int(days), tag=clean_tag)
+        return SyncResponse(
+            status="success",
+            message=f"Sincronização com AWS Cost Explorer concluída com sucesso (Execução #{run_id}).",
+            snapshot=_snapshot(updated_row) if updated_row else None,
+        )
+    except Exception as e:
+        logger.warning(f"Sincronização com AWS não concluída: {e}")
+        if latest:
+            return SyncResponse(
+                status="offline_fallback",
+                message="AWS indisponível ou credenciais ausentes. Exibindo dados locais seguros.",
+                snapshot=_snapshot(latest),
+            )
+        raise HTTPException(
+            status_code=503,
+            detail=f"Não foi possível sincronizar com a AWS e nenhum dado local foi encontrado: {str(e)}",
+        )
+
+
+@app.get(
+    "/api/v1/runs",
+    response_model=HistoryResponse,
+    dependencies=[Depends(verify_api_key)],
+)
 def list_runs(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -448,7 +565,11 @@ def list_runs(
     return HistoryResponse(runs=result)
 
 
-@app.get("/api/v1/runs/{run_id}", response_model=Snapshot)
+@app.get(
+    "/api/v1/runs/{run_id}",
+    response_model=Snapshot,
+    dependencies=[Depends(verify_api_key)],
+)
 def get_run(run_id: str):
     try:
         numeric_id = int(run_id)
@@ -493,7 +614,10 @@ _MEDIA_TYPES = {
 }
 
 
-@app.get("/api/v1/runs/{run_id}/reports/{format}")
+@app.get(
+    "/api/v1/runs/{run_id}/reports/{format}",
+    dependencies=[Depends(verify_api_key)],
+)
 def download_report(run_id: str, format: str):
     norm_fmt = format.strip().lower()
     if norm_fmt not in _MEDIA_TYPES:

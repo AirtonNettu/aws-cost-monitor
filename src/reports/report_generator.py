@@ -410,7 +410,7 @@ def build_report_html(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AWS Cost Monitor — Relatório de Custos</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" integrity="sha384-T/4KgSWuZEPozpPz7rnnp/5lDSnpY1VPJCojf1S81uTHS1E38qgLfMgVsAeRCWc4" crossorigin="anonymous"></script>
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
@@ -670,8 +670,8 @@ def build_report_html(
     </div>
 
     <script>
-        const labels = {json.dumps(chart_labels, ensure_ascii=False)};
-        const dataValues = {json.dumps(chart_values)};
+        const labels = {json.dumps(chart_labels, ensure_ascii=False).replace("<", "\\u003c")};
+        const dataValues = {json.dumps(chart_values).replace("<", "\\u003c")};
         const colors = [
             '#4f46e5', '#06b6d4', '#10b981', '#f59e0b',
             '#ef4444', '#8b5cf6', '#ec4899', '#64748b'

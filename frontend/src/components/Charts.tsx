@@ -12,16 +12,43 @@ import {
 } from 'recharts'
 import type { Snapshot } from '../api/contracts'
 import { money } from '../lib/format'
+import { useOptionalApp } from '../app/context'
 import { Empty } from './States'
 
-const colors = [
-  '#44d7a3',
-  '#8394fa',
-  '#efbc70',
-  '#59b6e7',
-  '#d59be8',
-  '#91a59b',
+const AWS_PALETTE: Record<string, string> = {
+  ec2: '#ff9900',
+  compute: '#ff9900',
+  s3: '#e05244',
+  storage: '#e05244',
+  rds: '#2563eb',
+  database: '#2563eb',
+  cloudfront: '#8b5cf6',
+  lambda: '#f97316',
+  dynamodb: '#0284c7',
+  elasticache: '#059669',
+  sns: '#ec4899',
+  sqs: '#ea580c',
+}
+
+const fallbackColors = [
+  '#ff9900',
+  '#2563eb',
+  '#e05244',
+  '#8b5cf6',
+  '#f97316',
+  '#06b6d4',
+  '#10b981',
+  '#64748b',
 ]
+
+function getServiceColor(name: string, index = 0): string {
+  const lower = name.toLowerCase()
+  for (const [key, color] of Object.entries(AWS_PALETTE)) {
+    if (lower.includes(key)) return color
+  }
+  return fallbackColors[index % fallbackColors.length] ?? '#ff9900'
+}
+
 export default function Charts({
   snapshot,
   services = snapshot.services,
@@ -29,10 +56,12 @@ export default function Charts({
   snapshot: Snapshot
   services?: Snapshot['services']
 }) {
+  const app = useOptionalApp()
+  const currency = app?.currency ?? 'USD'
   const serviceColors = new Map(
     snapshot.services.map((service, index) => [
       service.name,
-      colors[index % colors.length],
+      getServiceColor(service.name, index),
     ]),
   )
   return (
@@ -68,12 +97,12 @@ export default function Charts({
                     >
                       <stop
                         offset="0%"
-                        stopColor="#44d7a3"
-                        stopOpacity={0.35}
+                        stopColor="#ff9900"
+                        stopOpacity={0.4}
                       />
                       <stop
                         offset="100%"
-                        stopColor="#44d7a3"
+                        stopColor="#ff9900"
                         stopOpacity={0.02}
                       />
                     </linearGradient>
@@ -95,8 +124,8 @@ export default function Charts({
                     tick={{ fontSize: 11 }}
                   />
                   <YAxis
-                    tickFormatter={(v) => `$${v}`}
-                    width={58}
+                    tickFormatter={(v) => (currency === 'BRL' ? `R$${v}` : `$${v}`)}
+                    width={64}
                     tickLine={false}
                     axisLine={false}
                     stroke="var(--muted)"
@@ -109,13 +138,13 @@ export default function Charts({
                       borderRadius: 10,
                       color: 'var(--text)',
                     }}
-                    formatter={(v) => money(Number(v))}
+                    formatter={(v) => money(Number(v), currency)}
                   />
                   <Area
                     type="monotone"
                     dataKey="amount"
                     name="Custo"
-                    stroke="#44d7a3"
+                    stroke="#ff9900"
                     strokeWidth={2.5}
                     fill="url(#cost-gradient)"
                     isAnimationActive={false}
@@ -195,7 +224,7 @@ export default function Charts({
                       borderColor: 'var(--border)',
                       borderRadius: 10,
                     }}
-                    formatter={(v) => money(Number(v))}
+                    formatter={(v) => money(Number(v), currency)}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -211,7 +240,7 @@ export default function Charts({
                   </span>
                   <strong>
                     {service.percentage.toFixed(1)}%
-                    <small>{money(service.amount)}</small>
+                    <small>{money(service.amount, currency)}</small>
                   </strong>
                 </li>
               ))}

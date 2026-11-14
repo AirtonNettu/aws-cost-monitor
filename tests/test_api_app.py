@@ -316,3 +316,46 @@ def test_comparison_period_equivalence_regression(isolated_db):
 
     snap_overlap = client.get("/api/v1/snapshots/latest?days=30&tag=Env%3A+Overlap").json()
     assert snap_overlap["comparison"]["equivalent_periods"] is False
+
+
+def test_api_key_auth_enforcement(monkeypatch):
+    """Garante que endpoints protegidos exigem X-API-Key quando API_KEY está configurada."""
+    monkeypatch.setenv("API_KEY", "super-secret-finops-key")
+
+    # 1. Health deve continuar público
+    res_health = client.get("/api/v1/health")
+    assert res_health.status_code == 200
+
+    # 2. Endpoint protegido sem header retorna 401
+    res_unauth = client.get("/api/v1/snapshots/latest?days=30")
+    assert res_unauth.status_code == 401
+    assert "Chave de API inválida" in res_unauth.json()["detail"]
+
+    # 3. Endpoint protegido com chave errada retorna 401
+    res_wrong = client.get(
+        "/api/v1/snapshots/latest?days=30",
+        headers={"X-API-Key": "wrong-key"},
+    )
+    assert res_wrong.status_code == 401
+
+    # 4. Endpoint protegido com chave correta responde normalmente (ou 404 se sem dados)
+    res_auth = client.get(
+        "/api/v1/snapshots/latest?days=30",
+        headers={"X-API-Key": "super-secret-finops-key"},
+    )
+    assert res_auth.status_code in (200, 404)
+
+
+def test_sync_endpoint_with_cache(monkeypatch, isolated_db):
+    """Testa o endpoint de sincronização sob demanda respeitando o cooldown."""
+    monkeypatch.setattr("src.config.DATABASE_PATH", isolated_db)
+    from src.database.seeds import seed_fixtures
+
+    seed_fixtures(db_path=isolated_db)
+
+    res = client.post("/api/v1/sync?days=30")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] in ("cached", "success", "offline_fallback")
+    assert data["snapshot"] is not None
+

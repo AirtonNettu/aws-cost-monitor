@@ -116,5 +116,9 @@ export function createMockClient(
     async exportReport() {
       throw new Error('Exportação depende do futuro backend.')
     },
+    async sync(filters, signal) {
+      await wait(signal)
+      return this.getSnapshot(filters, signal)
+    },
   }
 }

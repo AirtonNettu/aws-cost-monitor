@@ -67,7 +67,47 @@ def _top_services(analysis, top_n):
     }
 
 
-def generate_alerts(analysis, comparison):
+def _check_anomaly_spikes(daily_costs: list[float] | None = None) -> dict | None:
+    """Detecta picos de gastos anômalos usando Z-score estatístico e razão sobre mediana.
+
+    Exige no mínimo 5 amostras para relevância estatística.
+    """
+    if not daily_costs or len(daily_costs) < 5:
+        return None
+
+    mean = sum(daily_costs) / len(daily_costs)
+    if mean <= 0:
+        return None
+
+    variance = sum((x - mean) ** 2 for x in daily_costs) / (len(daily_costs) - 1)
+    std_dev = variance ** 0.5
+    if std_dev == 0:
+        return None
+
+    max_val = max(daily_costs)
+    z_score = (max_val - mean) / std_dev
+
+    # Para amostras pequenas (ex: 5 a 14 dias), o Z-score máximo teórico é sqrt(N-1) <= 2.23
+    # Então checamos Z >= 2.0 ou razão >= 2.5x da média dos demais dias
+    outros = [x for x in daily_costs if x != max_val]
+    media_outros = sum(outros) / len(outros) if outros else mean
+
+    eh_spike = (z_score >= 2.0 or (media_outros > 0 and max_val >= 2.5 * media_outros)) and (max_val - media_outros) > 5.0
+
+    if eh_spike:
+        severity = "critical" if (z_score >= 2.2 or max_val >= 3.0 * media_outros) else "warning"
+        return {
+            "type": "anomaly",
+            "severity": severity,
+            "message": (
+                f"Pico anômalo detectado: gasto pontual de {max_val:.2f} USD "
+                f"(desvio expressivo vs média diária de {media_outros:.2f} USD)."
+            ),
+        }
+    return None
+
+
+def generate_alerts(analysis, comparison, daily_costs: list[float] | None = None):
     """Gera a lista de alertas de FinOps a partir dos dados calculados.
 
     Parâmetros
@@ -76,6 +116,8 @@ def generate_alerts(analysis, comparison):
         Saída de ``cost_analyzer.analyze_costs``.
     comparison : dict | None
         Saída de ``cost_analyzer.compare_periods``.
+    daily_costs : list[float] | None
+        Série temporal de custos diários para detecção estatística de anomalias.
 
     Retorno
     -------
@@ -84,6 +126,10 @@ def generate_alerts(analysis, comparison):
         positivo ou nenhuma regra foi acionada.
     """
     alerts = []
+
+    anomaly = _check_anomaly_spikes(daily_costs)
+    if anomaly:
+        alerts.append(anomaly)
 
     growth = _check_growth(comparison, config.FINOPS_GROWTH_THRESHOLD)
     if growth:

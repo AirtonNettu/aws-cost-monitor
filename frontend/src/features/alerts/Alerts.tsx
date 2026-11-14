@@ -9,11 +9,13 @@ import {
 import type { Snapshot } from '../../api/contracts'
 import { Empty } from '../../components/States'
 
-const titles = {
+const titles: Record<string, string> = {
   growth: 'Crescimento acima do limiar',
   concentration: 'Concentração de despesas',
   top_services: 'Ranking de serviços',
   untagged: 'Recursos sem tag',
+  untagged_resources: 'Recursos sem tag',
+  anomaly: 'Pico anômalo de gastos',
 }
 const labels = { info: 'Informativo', warning: 'Atenção', critical: 'Crítico' }
 export function Alerts({

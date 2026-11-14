@@ -153,6 +153,38 @@ Essa separação é intencional: ela mantém a parte crítica (os números) audi
 
 ## Arquitetura
 
+### 1. Arquitetura Cloud & Serverless (AWS)
+O projeto opera em um modelo **100% Serverless sob demanda**, desenhado para viver perpetuamente dentro do **AWS Free Tier (Custo Zero)**:
+
+```mermaid
+flowchart LR
+    EB["⏰ Amazon EventBridge<br/><i>(Cron diário 08:00 BRT)</i>"]
+    LAMBDA["⚡ AWS Lambda<br/><i>(Python 3.12 / 128 MB)</i>"]
+    CE[("💰 AWS Cost Explorer<br/><i>(API de Custos)</i>")]
+    S3[("🪣 Amazon S3<br/><i>(Website Hosting)</i>")]
+    CW["📑 CloudWatch Logs<br/><i>(Retenção 14 dias)</i>"]
+    IAM["🛡️ IAM Least Privilege<br/><i>(ce:GetCost + s3:Put)</i>"]
+    USER["🌐 Navegador Web<br/><i>(Dashboard 24/7)</i>"]
+
+    EB -->|Disparo agendado| LAMBDA
+    IAM -.->|Permissões estritas| LAMBDA
+    LAMBDA -->|Consulta custos| CE
+    LAMBDA -->|Logs estruturados| CW
+    LAMBDA -->|Publica index.html| S3
+    S3 -->|Acesso estático| USER
+
+    classDef aws fill:#1e293b,stroke:#f59e0b,color:#f8fafc;
+    classDef comp fill:#0d3b4f,stroke:#22d3ee,color:#e2f6fb;
+    classDef store fill:#0d3b2f,stroke:#34d399,color:#dcfbe9;
+    class EB,LAMBDA,CE,CW,IAM aws;
+    class S3 store;
+    class USER comp;
+```
+
+---
+
+### 2. Fluxo Interno de Componentes (Python & FinOps)
+
 ```mermaid
 flowchart LR
     AWS[("AWS Cost Explorer<br/>boto3 / STS / IAM")]
@@ -160,8 +192,8 @@ flowchart LR
     AN["cost_analyzer.py<br/><i>cálculo determinístico</i>"]
     FR["finops_rules.py<br/><i>regras de FinOps</i>"]
     AI["llama_client.py<br/><i>IA — opcional / não-bloqueante</i>"]
-    RG["report_generator.py<br/><i>relatório txt / json / md</i>"]
-    OUT[("reports/")]
+    RG["report_generator.py<br/><i>relatório txt / json / md / html</i>"]
+    OUT[("reports/ ou S3")]
 
     AWS --> CE --> AN --> FR
     FR --> RG
@@ -178,6 +210,20 @@ flowchart LR
 ```
 
 > **Python calcula** (nós em azul: coleta, cálculo e regras de FinOps). **IA interpreta** (nó roxo tracejado: opcional e não-bloqueante — se o Llama estiver fora do ar, o relatório sai mesmo assim).
+
+---
+
+## 🏛️ Alinhamento com o AWS Well-Architected Framework
+
+Este projeto foi desenhado sob as melhores práticas dos 5 pilares do **AWS Well-Architected Framework**:
+
+| Pilar AWS | Práticas Implementadas no Projeto |
+|---|---|
+| **💰 Cost Optimization** | • **Zero custo fixo:** arquitetura 100% Serverless sob demanda.<br/>• **Proteção de cota:** execução agendada 1x/dia via EventBridge (máximo 30 consultas/mês ao Cost Explorer, preservando o Free Tier de $0.01/req).<br/>• **Alocação enxuta:** Lambda configurada com apenas 128 MB de RAM e timeout de 15s.<br/>• **Hospedagem S3:** distribuição web estática sem custos de instâncias EC2 ou ALBs. |
+| **🛡️ Security** | • **Princípio do Menor Privilégio (Least Privilege):** política IAM restrita exclusivamente a `ce:GetCostAndUsage` e `s3:PutObject` no bucket de relatórios.<br/>• **Zero Credenciais Hardcoded:** uso exclusivo de IAM Roles na nuvem e `.env` isolado no ambiente local.<br/>• **Defesa em Profundidade:** neutralização de Stored XSS e delimitação de prompts contra Injeção Indireta de IA. |
+| **⚡ Performance Efficiency** | • **Pacote de deploy ultraleve (~37 KB):** inicialização instantânea da Lambda sem cold starts pesados.<br/>• **Persistência Indexada:** SQLite em modo WAL com índices otimizados para consultas locais instantâneas. |
+| **🔄 Reliability** | • **Desacoplamento gracioso:** se a camada de IA (Ollama) falhar, o pipeline de dados continua funcionando e gera o relatório financeiro com integridade 100%.<br/>• **Integridade Numérica Estrita:** rejeição de `NaN` e `Infinity`, preservação de créditos e validação de períodos contíguos. |
+| **⚙️ Operational Excellence** | • **Infraestrutura como Código (IaC):** provisionamento automatizado via **Terraform** (`terraform/`).<br/>• **CI/CD Automatizado:** GitHub Actions com testes automatizados, linters e auditoria de segurança a cada pull request. |
 
 A orquestração do fluxo fica em `src/main.py`, e os parâmetros (região, janela de dias, endpoint do Llama, formato do relatório) são centralizados em `src/config.py`.
 
@@ -222,6 +268,7 @@ A orquestração do fluxo fica em `src/main.py`, e os parâmetros (região, jane
 - **[pytest](https://docs.pytest.org/)** — testes unitários e de integração com mocks (59 testes)
 - **AWS Cost Explorer** / **AWS STS** — consulta de custos e verificação de identidade
 - **AWS Lambda** / **Amazon EventBridge** / **Amazon S3** — arquitetura serverless 24/7 de custo zero (Free Tier)
+- **Terraform** — Infraestrutura como Código (IaC) para provisionamento automatizado da stack AWS
 - **Llama local** (ex.: [Ollama](https://ollama.com/)) — modelo de interpretação desacoplado
 
 ---
@@ -230,6 +277,15 @@ A orquestração do fluxo fica em `src/main.py`, e os parâmetros (região, jane
 
 ```
 aws-cost-monitor/
+├── terraform/                  # Infraestrutura como Código (IaC - S3, IAM, Lambda, EventBridge)
+│   ├── versions.tf
+│   ├── variables.tf
+│   ├── s3.tf
+│   ├── iam.tf
+│   ├── lambda.tf
+│   ├── eventbridge.tf
+│   ├── outputs.tf
+│   └── README.md
 ├── src/
 │   ├── main.py                 # orquestra o fluxo completo (CLI com flags)
 │   ├── config.py               # configuração centralizada (.env / env vars)
@@ -247,7 +303,11 @@ aws-cost-monitor/
 │   │   └── app.py              # interface web interativa Streamlit
 │   └── reports/
 │       └── report_generator.py # geração de relatórios (txt/json/md/html)
-├── tests/                      # suíte completa com pytest + mocks (59 testes)
+├── scripts/
+│   ├── security_audit.py       # auditoria automatizada de segurança NETTO LABS
+│   ├── seed_snapshots.py       # gerador de seeds sintéticos para testes
+│   └── build_lambda_package.py # empacotador limpo do artefato serverless (~37 KB)
+├── tests/                      # suíte completa com pytest + mocks (83 testes)
 │   ├── conftest.py
 │   ├── test_cli.py
 │   ├── test_cost_analyzer.py

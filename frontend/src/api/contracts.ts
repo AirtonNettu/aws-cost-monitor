@@ -33,7 +33,14 @@ export const snapshotSchema = z.object({
   alerts: z.array(
     z.object({
       id: z.string(),
-      type: z.enum(['growth', 'concentration', 'top_services', 'untagged']),
+      type: z.enum([
+        'growth',
+        'concentration',
+        'top_services',
+        'untagged',
+        'untagged_resources',
+        'anomaly',
+      ]),
       severity: z.enum(['info', 'warning', 'critical']),
       message: z.string(),
     }),
@@ -80,4 +87,5 @@ export interface DataClient {
     format: ReportFormat,
     signal?: AbortSignal,
   ): Promise<Blob>
+  sync?(filters: Filters, signal?: AbortSignal): Promise<Snapshot>
 }

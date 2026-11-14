@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Activity,
   Bell,
   ChartNoAxesCombined,
   ChevronRight,
   Cloud,
-  FlaskConical,
   History,
   LayoutDashboard,
   Menu,
@@ -36,7 +36,8 @@ function initialTheme(): 'dark' | 'light' {
   }
 }
 export function Layout() {
-  const { client, filters, setFilters } = useApp()
+  const { client, filters, setFilters, currency, setCurrency } = useApp()
+  const queryClient = useQueryClient()
   const location = useLocation()
   const isSnapshot = ['/', '/costs', '/alerts', '/ai'].includes(
     location.pathname,
@@ -44,9 +45,28 @@ export function Layout() {
   const query = useSnapshot(isSnapshot)
   const [theme, setTheme] = useState(initialTheme)
   const [menu, setMenu] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<string | null>(null)
   const main = useRef<HTMLElement>(null)
   const menuButton = useRef<HTMLButtonElement>(null)
   const sidebar = useRef<HTMLElement>(null)
+
+  const handleSync = async () => {
+    if (!client.sync) return
+    try {
+      setSyncing(true)
+      setSyncStatus('Sincronizando...')
+      await client.sync(filters)
+      await queryClient.invalidateQueries()
+      setSyncStatus('Atualizado!')
+      setTimeout(() => setSyncStatus(null), 3000)
+    } catch {
+      setSyncStatus('Falha ao sincronizar')
+      setTimeout(() => setSyncStatus(null), 3000)
+    } finally {
+      setSyncing(false)
+    }
+  }
   useEffect(() => {
     if (!menu) return
     sidebar.current?.querySelector<HTMLAnchorElement>('nav a')?.focus()
@@ -123,20 +143,14 @@ export function Layout() {
         </nav>
         <div className="sidebar-bottom">
           <div className="architecture-note">
-            <ShieldCheck size={19} aria-hidden="true" />
-            <strong>Clareza para decidir.</strong>
-            <p>
-              React apresenta.
-              <br />
-              Python calcula.
-              <br />
-              IA interpreta.
-            </p>
+            <ShieldCheck size={18} aria-hidden="true" />
+            <strong>FinOps Guardian</strong>
+            <p>Monitoramento e governança de custos na AWS.</p>
           </div>
           <div className="sidebar-footer">
             <span className="avatar">NL</span>
             <div>
-              Netto Labs<small>AWS Cost Monitor · v0.1</small>
+              Netto Labs<small>AWS Cost Monitor · v0.2</small>
             </div>
           </div>
         </div>
@@ -154,15 +168,57 @@ export function Layout() {
             >
               {menu ? <X size={21} /> : <Menu size={21} />}
             </button>
-            <span>Workspace</span>
+            <span>AWS Cost Monitor</span>
             <ChevronRight size={13} aria-hidden="true" />
             <strong>{current}</strong>
           </div>
           <div className="topbar-actions">
-            <span className="connection-badge">
-              <span />
-              {client.mode === 'mock' ? 'Ambiente demo' : 'Modo API'}
-            </span>
+            {client.sync && (
+              <button
+                type="button"
+                className="sync-action-btn"
+                onClick={handleSync}
+                disabled={syncing}
+                title="Sincronizar com AWS Cost Explorer"
+              >
+                <RefreshCw size={14} className={syncing ? 'spinning' : ''} />
+                <span>{syncStatus ?? 'Atualizar AWS'}</span>
+              </button>
+            )}
+            <div
+              className="currency-toggle"
+              role="group"
+              aria-label="Seletor de moeda"
+            >
+              <button
+                type="button"
+                className={`currency-pill ${currency === 'USD' ? 'active' : ''}`}
+                onClick={() => setCurrency('USD')}
+                aria-pressed={currency === 'USD'}
+              >
+                USD ($)
+              </button>
+              <button
+                type="button"
+                className={`currency-pill ${currency === 'BRL' ? 'active' : ''}`}
+                onClick={() => setCurrency('BRL')}
+                aria-pressed={currency === 'BRL'}
+              >
+                BRL (R$)
+              </button>
+            </div>
+            {client.mode === 'mock' && (
+              <span className="connection-badge demo-badge">
+                <span />
+                Dados simulados
+              </span>
+            )}
+            {client.mode === 'api' && (
+              <span className="connection-badge api-badge">
+                <span />
+                AWS Conectado
+              </span>
+            )}
             <button
               className="icon-button"
               aria-label={`Ativar tema ${theme === 'dark' ? 'claro' : 'escuro'}`}
@@ -173,19 +229,6 @@ export function Layout() {
           </div>
         </header>
         <main ref={main} id="main-content" tabIndex={-1}>
-          <div
-            className={`mode-banner ${client.mode === 'api' ? 'api-banner' : ''}`}
-          >
-            <FlaskConical size={17} aria-hidden="true" />
-            <strong>
-              {client.mode === 'mock' ? 'Dados simulados' : 'Integração API'}
-            </strong>
-            <span>
-              {client.mode === 'mock'
-                ? 'Explore o dashboard com um cenário ilustrativo. Nenhuma conexão com a AWS.'
-                : 'Leitura de snapshots pela API configurada. Contrato FastAPI proposto; integração depende do backend.'}
-            </span>
-          </div>
           {isSnapshot && (
             <div className="global-filters">
               <div className="inline-filters">

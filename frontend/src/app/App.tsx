@@ -23,9 +23,12 @@ export function App({ client }: { client: DataClient }) {
       }),
   )
   const [filters, setFilters] = useState<Filters>({ days: 30, tag: '' })
+  const [currency, setCurrency] = useState<'USD' | 'BRL'>('USD')
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContext.Provider value={{ client, filters, setFilters }}>
+      <AppContext.Provider
+        value={{ client, filters, setFilters, currency, setCurrency }}
+      >
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<SnapshotPage kind="overview" />} />

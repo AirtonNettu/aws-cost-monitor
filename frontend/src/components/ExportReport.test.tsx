@@ -32,7 +32,13 @@ it('downloads only the format advertised by the API and reports download failure
     .mockImplementation(() => {})
   render(
     <AppContext.Provider
-      value={{ client, filters: { days: 30, tag: '' }, setFilters: () => {} }}
+      value={{
+        client,
+        filters: { days: 30, tag: '' },
+        setFilters: () => {},
+        currency: 'USD',
+        setCurrency: () => {},
+      }}
     >
       <ExportReport snapshot={snapshot} />
     </AppContext.Provider>,

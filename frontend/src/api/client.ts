@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { historySchema, snapshotSchema, type DataClient } from './contracts'
 import { fetchResponse, request } from './http'
 
@@ -24,6 +25,25 @@ export function createApiClient(base: string): DataClient {
         { signal },
       )
       return response.blob()
+    },
+    sync: async (filters, signal) => {
+      const query = new URLSearchParams({ days: String(filters.days) })
+      if (filters.tag) query.set('tag', filters.tag)
+      const res = await request(
+        base,
+        `sync?${query}`,
+        z.object({
+          status: z.string(),
+          message: z.string(),
+          snapshot: snapshotSchema.nullable(),
+        }),
+        {
+          method: 'POST',
+          signal,
+        },
+      )
+      if (!res.snapshot) throw new Error(res.message)
+      return res.snapshot
     },
   }
 }

@@ -225,12 +225,89 @@ class SecurityAuditor:
                     }
                 )
 
+    def scan_cloudflare_security(self) -> None:
+        """Audits repository against the Cloudflare Security Audit baseline (SEC-01 through SEC-05)."""
+        # SEC-01 & SEC-02: Check report generator for XSS sanitization and SRI
+        report_gen = self.root_dir / "src" / "reports" / "report_generator.py"
+        if report_gen.exists():
+            content = report_gen.read_text(encoding="utf-8", errors="ignore")
+            if "cdn.jsdelivr.net" in content and "integrity=" not in content:
+                self.findings.append(
+                    {
+                        "category": "Cloudflare Audit (SEC-02)",
+                        "severity": "critical",
+                        "file": str(report_gen.relative_to(self.root_dir)),
+                        "line": 0,
+                        "message": "CDN dependency loaded without Subresource Integrity (SRI) hash.",
+                    }
+                )
+            if "const labels =" in content and "\\u003c" not in content:
+                self.findings.append(
+                    {
+                        "category": "Cloudflare Audit (SEC-01)",
+                        "severity": "critical",
+                        "file": str(report_gen.relative_to(self.root_dir)),
+                        "line": 0,
+                        "message": "Potential Stored XSS: JSON serialization inside script tag does not sanitize '<' characters.",
+                    }
+                )
+
+        # SEC-03: Check API authentication hooks
+        api_app = self.root_dir / "src" / "api" / "app.py"
+        if api_app.exists():
+            content = api_app.read_text(encoding="utf-8", errors="ignore")
+            if "verify_api_key" not in content or "APIKeyHeader" not in content:
+                self.findings.append(
+                    {
+                        "category": "Cloudflare Audit (SEC-03)",
+                        "severity": "warning",
+                        "file": str(api_app.relative_to(self.root_dir)),
+                        "line": 0,
+                        "message": "API endpoints lack authentication/authorization dependency hooks.",
+                    }
+                )
+
+        # SEC-04: Check AI prompt delimiters
+        llama_client = self.root_dir / "src" / "ai" / "llama_client.py"
+        if llama_client.exists():
+            content = llama_client.read_text(encoding="utf-8", errors="ignore")
+            if "<cost_data>" not in content:
+                self.findings.append(
+                    {
+                        "category": "Cloudflare Audit (SEC-04)",
+                        "severity": "warning",
+                        "file": str(llama_client.relative_to(self.root_dir)),
+                        "line": 0,
+                        "message": "LLM prompt lacks strict data enclosure delimiters (<cost_data>) against indirect prompt injection.",
+                    }
+                )
+
+        # SEC-05: Check GitHub Actions SHA pinning
+        workflows_dir = self.root_dir / ".github" / "workflows"
+        if workflows_dir.exists():
+            for wf in workflows_dir.glob("*.yml"):
+                content = wf.read_text(encoding="utf-8", errors="ignore")
+                for line_idx, line in enumerate(content.splitlines(), start=1):
+                    stripped = line.strip()
+                    if stripped.startswith("uses: actions/") or stripped.startswith("uses: astral-sh/"):
+                        if "@v" in stripped:
+                            self.findings.append(
+                                {
+                                    "category": "Cloudflare Audit (SEC-05)",
+                                    "severity": "warning",
+                                    "file": str(wf.relative_to(self.root_dir)),
+                                    "line": line_idx,
+                                    "message": f"GitHub Actions step uses mutable version tag instead of immutable commit SHA: '{stripped}'",
+                                }
+                            )
+
     def run_all(self) -> list[dict[str, Any]]:
         """Runs the complete suite of security checks."""
         self.findings = []
         self.scan_secrets()
         self.scan_gitignore()
         self.scan_iam_policies()
+        self.scan_cloudflare_security()
         return self.findings
 
     def generate_markdown_report(self, output_path: Path) -> str:

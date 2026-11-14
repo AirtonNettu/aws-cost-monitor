@@ -90,3 +90,21 @@ def test_alerta_recursos_sem_tag():
     assert "Untagged" in untagged_alert["message"]
     assert untagged_alert["severity"] == "warning"
 
+
+def test_alerta_anomalia_detecta_spike(costs_single_period):
+    analysis = analyze_costs(costs_single_period)
+    # Série estável em 10 USD com um pico repentino em 120 USD no 6º dia
+    daily = [10.0, 10.5, 9.8, 10.2, 10.0, 120.0]
+    alerts = generate_alerts(analysis, None, daily_costs=daily)
+    assert any(a["type"] == "anomaly" for a in alerts)
+    anomaly_alert = next(a for a in alerts if a["type"] == "anomaly")
+    assert "Pico anômalo" in anomaly_alert["message"]
+    assert "120.00 USD" in anomaly_alert["message"]
+
+
+def test_alerta_anomalia_ignora_serie_estavel(costs_single_period):
+    analysis = analyze_costs(costs_single_period)
+    daily = [10.0, 10.2, 9.9, 10.1, 10.3, 10.0]
+    alerts = generate_alerts(analysis, None, daily_costs=daily)
+    assert not any(a["type"] == "anomaly" for a in alerts)
+

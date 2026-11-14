@@ -6,11 +6,16 @@ export const AppContext = createContext<{
   client: DataClient
   filters: Filters
   setFilters: (filters: Filters) => void
+  currency: 'USD' | 'BRL'
+  setCurrency: (currency: 'USD' | 'BRL') => void
 } | null>(null)
 export function useApp() {
   const context = useContext(AppContext)
   if (!context) throw new Error('AppContext ausente')
   return context
+}
+export function useOptionalApp() {
+  return useContext(AppContext)
 }
 export function useSnapshot(enabled = true) {
   const { client, filters } = useApp()

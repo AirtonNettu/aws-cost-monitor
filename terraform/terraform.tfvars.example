@@ -1,0 +1,12 @@
+# Configuração de exemplo para deploy via Terraform
+aws_region       = "us-east-1"
+project_name     = "aws-cost-monitor"
+environment      = "prod"
+cost_period_days = 30
+cost_granularity = "DAILY"
+
+# 11:00 UTC = 08:00 BRT
+cron_expression  = "cron(0 11 * * ? *)"
+
+# Opcional: Se omitido, um sufixo aleatório será gerado para o bucket
+# s3_bucket_name = "meu-bucket-finops-customizado"
