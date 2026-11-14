@@ -30,3 +30,6 @@ docs/project-level-and-improvements.md
 
 # Logs de ferramentas locais
 *.log
+
+# Guia de Carreira & Portfólio (pessoal e local)
+carreira/
