@@ -141,6 +141,27 @@ Essa separação é intencional: ela mantém a parte crítica (os números) audi
 
 ---
 
+## 🤖 Metodologia de Desenvolvimento: Human-in-the-Loop & AI Squad
+
+Este repositório foi desenvolvido sob uma metodologia moderna de **Engenharia Agêntica com Supervisão Humana (*Human-in-the-Loop Agentic Development*)**.
+
+A IA atua em duas frentes distintas no ecossistema deste projeto:
+
+### 1. IA no Processo de Engenharia (Como o projeto é construído)
+O desenvolvimento seguiu padrões corporativos de governança definidos em [`AGENTS.md`](AGENTS.md) e `.agents/rules/`, divididos em papéis especializados:
+* **👨‍💻 Arquiteto Humano (Tech Lead / Product Owner):** Responsável por todo o direcionamento estratégico, decisões de arquitetura, priorização de funcionalidades, validação de contratos e aprovação final de commits e deploys.
+* **🛡️ Lead AppSec Auditor (Agente de Segurança):** Audita código, dependências e configurações contra vazamento de credenciais AWS (`AKIA...`), injeção de comandos, XSS e IDOR antes de cada liberação (`scripts/security_audit.py`).
+* **💰 FinOps Guardian (Agente Guardião de Custos):** Assegura que toda a arquitetura permaneça 100% dentro do **AWS Free Tier**, bloqueando consultas custosas ou redundantes à API do Cost Explorer.
+* **🧪 QA & Architecture Reviewer (Agente de Qualidade):** Garante testes unitários massivos com mocks (sem chamadas reais à nuvem nos testes), cobertura de 100% dos caminhos críticos e registro de decisões em **ADRs (Architectural Decision Records)**.
+
+### 2. IA no Produto (Como a aplicação funciona)
+Diferente de aplicações comuns que usam LLMs para gerar dados ou fazer cálculos matemáticos, este projeto aplica a **Regra de Ouro**:
+> **"Python calcula de forma determinística; a IA apenas interpreta."**
+* A camada analítica (FastAPI / Boto3 / NumPy / Pandas) gera snapshots financeiros estritos, rejeitando `NaN` ou `Infinity` e preservando créditos e descontos da AWS.
+* Apenas após a consolidação matemática, o modelo de linguagem (Llama via Ollama local ou API externa) recebe os dados encapsulados em tags `<cost_data>` para formular insights gerenciais e recomendações de redução de desperdício em linguagem natural.
+
+---
+
 ## Objetivo
 
 - Consultar os custos da conta AWS via AWS Cost Explorer.
